@@ -12,7 +12,9 @@ const envSchema = z.object({
   WHATSAPP_API_KEY: z.string().min(1),
   WHATSAPP_PHONE_NUMBER_ID: z.string().min(1),
   EXOTEL_WEBHOOK_SECRET: z.string().min(1),
+  TWILIO_ACCOUNT_SID: z.string().optional(),
   TWILIO_AUTH_TOKEN: z.string().optional(), // Optional auth token for verifying Twilio signatures
+  TWILIO_PHONE_NUMBER: z.string().optional(),
   // Dashboard admin credentials (simple single-admin config)
   ADMIN_EMAIL: z.string().email(),
   ADMIN_PASSWORD: z.string().min(6),
