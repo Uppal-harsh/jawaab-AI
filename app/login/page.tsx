@@ -26,7 +26,17 @@ export default function LoginPage() {
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        router.push('/dashboard');
+        const { data: pref } = await supabase
+          .from('onboarding_preferences')
+          .select('id')
+          .eq('user_id', session.user.id)
+          .maybeSingle();
+
+        if (pref) {
+          router.push('/dashboard');
+        } else {
+          router.push('/onboarding');
+        }
       }
     };
     checkUser();
@@ -53,9 +63,19 @@ export default function LoginPage() {
         if (error) throw error;
         
         if (data.session) {
-          // Store a temporary local session cookie if our backend API checks it
           document.cookie = `jawaab_admin_session=authenticated_token_active; path=/; max-age=604800; samesite=strict;`;
-          router.push('/dashboard');
+          
+          const { data: pref } = await supabase
+            .from('onboarding_preferences')
+            .select('id')
+            .eq('user_id', data.session.user.id)
+            .maybeSingle();
+
+          if (pref) {
+            router.push('/dashboard');
+          } else {
+            router.push('/onboarding');
+          }
         }
       } else {
         const { data, error } = await supabase.auth.signUp({
@@ -68,10 +88,9 @@ export default function LoginPage() {
 
         if (error) throw error;
 
-        // If email confirmation is enabled, notify the user. Otherwise redirect.
         if (data.session) {
           document.cookie = `jawaab_admin_session=authenticated_token_active; path=/; max-age=604800; samesite=strict;`;
-          router.push('/dashboard');
+          router.push('/onboarding');
         } else {
           setSuccessMsg('Account created! Please check your email for the confirmation link.');
           setEmail('');
@@ -257,12 +276,6 @@ export default function LoginPage() {
             )}
             Continue with Google
           </Button>
-        </div>
-
-        {/* Security badge */}
-        <div className="flex items-center justify-center gap-2 text-[10px] text-secondary">
-          <ShieldCheck className="w-4 h-4 text-accent" />
-          <span>Secured by Supabase Authentication</span>
         </div>
       </div>
     </div>

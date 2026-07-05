@@ -3,6 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { supabase } from '../../lib/supabase-client';
 import { 
   LayoutDashboard, 
   Store, 
@@ -23,6 +24,26 @@ const navItems = [
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
+
+  React.useEffect(() => {
+    async function checkPreferences() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        const { data: pref } = await supabase
+          .from('onboarding_preferences')
+          .select('id')
+          .eq('user_id', session.user.id)
+          .maybeSingle();
+
+        if (!pref) {
+          router.push('/onboarding');
+        }
+      } else {
+        router.push('/login');
+      }
+    }
+    checkPreferences();
+  }, [router]);
 
   return (
     <div className="flex h-screen bg-background overflow-hidden text-primary">

@@ -2,6 +2,7 @@
 
 import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import anime from 'animejs';
 import { Button } from '../components/ui/Button';
 import { InteractiveDemo } from '../components/landing/InteractiveDemo';
@@ -9,6 +10,9 @@ import { Timeline } from '../components/landing/Timeline';
 import { FeatureCards } from '../components/landing/FeatureCards';
 import { splitText } from '../hooks/useAnime';
 import { BrandLogo } from '../components/ui/BrandLogo';
+import { Navbar } from '../components/ui/Navbar';
+
+const LiquidEther = dynamic(() => import('../components/ui/LiquidEther'), { ssr: false });
 
 export default function LandingPage() {
   const router = useRouter();
@@ -33,19 +37,15 @@ export default function LandingPage() {
   }, []);
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen relative overflow-hidden">
+      
+      {/* Liquid WebGL Background */}
+      <div className="absolute top-0 inset-x-0 h-[600px] md:h-[750px] z-0 pointer-events-none opacity-40">
+        <LiquidEther />
+      </div>
       
       {/* Navbar */}
-      <nav className="fixed top-0 inset-x-0 h-16 border-b border-border bg-background/80 backdrop-blur-md z-50 flex items-center justify-between px-4 md:px-12">
-        <BrandLogo size="sm" />
-        <div className="flex items-center gap-4 md:gap-6">
-          <a href="/pricing" className="hidden md:inline-flex text-xs md:text-sm font-medium text-secondary hover:text-primary transition-colors">Pricing</a>
-          <a href="/faq" className="hidden md:inline-flex text-xs md:text-sm font-medium text-secondary hover:text-primary transition-colors">FAQ</a>
-          <a href="/demo" className="hidden md:inline-flex text-xs md:text-sm font-medium text-secondary hover:text-primary transition-colors">Watch Demo</a>
-          <a href="/login" className="text-xs md:text-sm font-medium text-secondary hover:text-primary transition-colors">Log in</a>
-          <Button size="sm" className="hidden sm:inline-flex" onClick={() => router.push('/login?mode=signup')}>Get Started</Button>
-        </div>
-      </nav>
+      <Navbar />
 
       {/* Hero Section */}
       <section className="pt-28 md:pt-40 pb-16 md:pb-20 px-4 md:px-6 max-w-5xl mx-auto text-center flex flex-col items-center">

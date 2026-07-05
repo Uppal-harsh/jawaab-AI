@@ -20,6 +20,8 @@ export default function BusinessProfile() {
   const [voiceGender, setVoiceGender] = useState<'male' | 'female'>('female');
   const [language, setLanguage] = useState('auto');
   const [whatsappNumber, setWhatsappNumber] = useState('+91 98765 43210');
+  const [telephonyProvider, setTelephonyProvider] = useState<'exotel' | 'twilio'>('exotel');
+  const [answeringMode, setAnsweringMode] = useState<'always_answer' | 'forwarded_only'>('always_answer');
 
   // UI state feedback
   const [loading, setLoading] = useState(false);
@@ -51,7 +53,8 @@ export default function BusinessProfile() {
           if (settings) {
             setGreeting(settings.greeting_message || '');
             setVoiceGender(settings.voice_gender || 'female');
-            // Support default fallback values
+            setTelephonyProvider(settings.telephony_provider || 'exotel');
+            setAnsweringMode(settings.answering_mode || 'always_answer');
           }
         }
         
@@ -101,6 +104,8 @@ export default function BusinessProfile() {
       fallback_number: phone,
       voice_gender: voiceGender,
       greeting_message: greeting,
+      telephony_provider: telephonyProvider,
+      answering_mode: answeringMode,
     };
 
     try {
@@ -381,6 +386,41 @@ export default function BusinessProfile() {
                   <option value="en">English Only</option>
                   <option value="hi">Hindi Only</option>
                 </select>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-surface border border-border rounded-xl p-6 shadow-sm">
+            <h2 className="text-lg font-medium mb-4 border-b border-border pb-4 text-white">Telephony & Routing</h2>
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-secondary uppercase tracking-wider block">Telephony Carrier</label>
+                <select 
+                  value={telephonyProvider}
+                  onChange={(e) => setTelephonyProvider(e.target.value as any)}
+                  className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:border-accent text-white transition-colors"
+                >
+                  <option value="exotel">Exotel Gateway</option>
+                  <option value="twilio">Twilio Cloud Gateway</option>
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-secondary uppercase tracking-wider block">Answering Plan Mode</label>
+                <select 
+                  value={answeringMode}
+                  onChange={(e) => setAnsweringMode(e.target.value as any)}
+                  className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:border-accent text-white transition-colors"
+                >
+                  <option value="always_answer">Always Answer Directly (Instant AI Receptionist)</option>
+                  <option value="forwarded_only">Answer Forwarded Only (Ring owner first, AI backup)</option>
+                </select>
+                <p className="text-[10px] text-secondary mt-1 leading-relaxed">
+                  {answeringMode === 'always_answer' 
+                    ? 'The AI agent answers immediately when dialed.' 
+                    : 'Twilio will dial your fallback phone number first. AI receptionist speaks only if you do not pick up.'
+                  }
+                </p>
               </div>
             </div>
           </div>

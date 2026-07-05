@@ -21,6 +21,8 @@ const businessSchema = z.object({
   fallback_number: z.string().nullable(),
   voice_gender: z.enum(['male', 'female']),
   greeting_message: z.string().min(1),
+  telephony_provider: z.enum(['exotel', 'twilio']).default('exotel'),
+  answering_mode: z.enum(['always_answer', 'forwarded_only']).default('always_answer'),
 });
 
 export async function GET(req: Request) {
@@ -118,6 +120,8 @@ export async function POST(req: Request) {
         fallback_number: val.fallback_number,
         voice_gender: val.voice_gender,
         greeting_message: val.greeting_message,
+        telephony_provider: val.telephony_provider,
+        answering_mode: val.answering_mode,
       }, { onConflict: 'business_id' });
 
     if (settingsError) throw settingsError;

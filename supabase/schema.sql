@@ -17,7 +17,9 @@ CREATE TABLE IF NOT EXISTS public.business_settings (
     operating_hours JSONB NOT NULL DEFAULT '{}'::jsonb,
     fallback_number TEXT,
     voice_gender TEXT NOT NULL DEFAULT 'female',
-    greeting_message TEXT NOT NULL
+    greeting_message TEXT NOT NULL,
+    telephony_provider TEXT NOT NULL DEFAULT 'exotel', -- 'exotel' or 'twilio'
+    answering_mode TEXT NOT NULL DEFAULT 'always_answer' -- 'always_answer' or 'forwarded_only'
 );
 
 -- 3. Knowledge Cards Table
@@ -100,4 +102,20 @@ CREATE POLICY admin_all_summaries ON public.call_summaries
     FOR ALL USING (auth.role() = 'authenticated');
 
 CREATE POLICY admin_all_prompts ON public.prompt_configurations 
+    FOR ALL USING (auth.role() = 'authenticated');
+
+-- 7. Onboarding Preferences Table
+CREATE TABLE IF NOT EXISTS public.onboarding_preferences (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID,
+    business_type TEXT NOT NULL,
+    missed_calls_per_day TEXT NOT NULL,
+    current_receptionist_method TEXT NOT NULL,
+    primary_goal TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+ALTER TABLE public.onboarding_preferences ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY admin_all_onboarding ON public.onboarding_preferences 
     FOR ALL USING (auth.role() = 'authenticated');

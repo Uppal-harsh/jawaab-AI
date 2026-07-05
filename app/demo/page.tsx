@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { BrandLogo } from '../../components/ui/BrandLogo';
 import { Button } from '../../components/ui/Button';
 import { Play, Volume2, Maximize, CheckCircle2, PhoneCall, Smartphone, Sparkles, MessageSquare } from 'lucide-react';
+import { Navbar } from '../../components/ui/Navbar';
 
 export default function DemoPage() {
   const router = useRouter();
@@ -45,17 +46,7 @@ export default function DemoPage() {
       <div className="absolute top-[20%] left-[-15%] w-[60%] h-[60%] rounded-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-[rgba(214,255,0,0.02)] to-transparent z-[-1] blur-3xl pointer-events-none"></div>
 
       {/* Navbar */}
-      <nav className="fixed top-0 inset-x-0 h-16 border-b border-border bg-background/80 backdrop-blur-md z-50 flex items-center justify-between px-4 md:px-12">
-        <a href="/">
-          <BrandLogo size="sm" />
-        </a>
-        <div className="flex items-center gap-4 md:gap-6">
-          <a href="/pricing" className="hidden md:inline-flex text-xs md:text-sm font-medium text-secondary hover:text-primary transition-colors">Pricing</a>
-          <a href="/faq" className="hidden md:inline-flex text-xs md:text-sm font-medium text-secondary hover:text-primary transition-colors">FAQ</a>
-          <a href="/login" className="text-xs md:text-sm font-medium text-secondary hover:text-primary transition-colors">Log in</a>
-          <Button size="sm" className="h-8 text-xs px-3 sm:px-4" onClick={() => router.push('/login?mode=signup')}>Get Started</Button>
-        </div>
-      </nav>
+      <Navbar />
 
       {/* Main Container */}
       <main className="pt-28 pb-20 px-4 max-w-5xl mx-auto flex-1 w-full flex flex-col justify-center">
