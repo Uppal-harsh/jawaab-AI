@@ -31,7 +31,7 @@ export class OpenRouterService {
     const headers = {
       'Authorization': `Bearer ${this.apiKey}`,
       'Content-Type': 'application/json',
-      'HTTP-Referer': 'https://jawaab-ai.com', // Required by OpenRouter rules
+      'HTTP-Referer': 'https://jawaab-ai.vercel.app/', // Required by OpenRouter rules
       'X-Title': 'Jawaab AI MVP Receptionist',
     };
 
