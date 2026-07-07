@@ -6,6 +6,13 @@ import { PromptBuilder } from '../../../../services/prompt-builder';
 import { WhatsAppService } from '../../../../services/whatsapp';
 import { ChatMessage } from '../../../../types';
 
+export async function GET() {
+  return NextResponse.json({
+    status: 'online',
+    message: 'Jawaab AI Telephony Status Webhook Endpoint is Active. Send a POST request on call completion.'
+  });
+}
+
 export async function POST(req: Request) {
   try {
     const rawBody = await req.text();

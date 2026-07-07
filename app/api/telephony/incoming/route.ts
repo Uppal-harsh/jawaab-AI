@@ -2,6 +2,13 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../lib/supabase';
 import { validateExotelWebhook } from '../../../../utils/validators';
 
+export async function GET() {
+  return NextResponse.json({
+    status: 'online',
+    message: 'Jawaab AI Telephony Webhook Endpoint is Active. Send an Exotel POST request to initialize a call.'
+  });
+}
+
 export async function POST(req: Request) {
   try {
     const rawBody = await req.text();
@@ -55,12 +62,16 @@ export async function POST(req: Request) {
       console.error('[Incoming Call] Failed to create call record:', insertErr);
     }
 
-    // Exotel expects XML response instructing it to play greeting and gather response
+    const host = req.headers.get('host') || 'localhost:3000';
+    const protocol = host.includes('localhost') ? 'ws' : 'wss';
+    const streamUrl = `${protocol}://${host}/api/telephony/stream?business_id=${business.id}`;
+
     const exotelXml = `
-      <Response>
-        <Say voice="${voice}" language="en-IN">${greeting}</Say>
-        <Gather input="speech" action="${req.url}/process" timeout="5" speechTimeout="auto" />
-      </Response>
+<Response>
+  <Say voice="${voice}" language="en-IN">${greeting}</Say>
+  <Stream url="${streamUrl}" />
+  <Hangup />
+</Response>
     `.trim();
 
     return new Response(exotelXml, {

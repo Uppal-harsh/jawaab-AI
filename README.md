@@ -101,10 +101,18 @@ SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
 # OpenRouter API Configuration
 OPENROUTER_API_KEY=your-openrouter-api-key
 
-# Telephony Configuration (Optional for mock testing)
+# Speech & Translation Integration
+SARVAM_API_KEY=your-sarvam-key
+
+# Telephony Configuration (Exotel Real-time Stream)
+EXOTEL_ACCOUNT_SID=your-exotel-sid
 EXOTEL_API_KEY=your-exotel-key
 EXOTEL_API_TOKEN=your-exotel-token
-EXOTEL_ACCOUNT_SID=your-exotel-sid
+EXOTEL_WEBHOOK_SECRET=your-exotel-webhook-secret (or 'bypass' for local dev)
+
+# Notification API (WhatsApp Business API)
+WHATSAPP_API_KEY=your-whatsapp-meta-token
+WHATSAPP_PHONE_NUMBER_ID=your-phone-id
 ```
 
 ### 3. Setup Database Schema (Supabase)
@@ -124,7 +132,7 @@ Make sure you configure the Supabase PostgreSQL database tables using the schema
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser to view the application.
+*Note: In Phase 2, `npm run dev` boots a custom Next.js server (`server.ts`) in CommonJS mode. This handles both normal HTTP page rendering (on `http://localhost:3000`) and bidirectional real-time Exotel WebSocket audio streams (on `/api/telephony/stream`).*
 
 ---
 
