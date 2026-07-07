@@ -16,6 +16,11 @@ const syne = Syne({
 export const metadata: Metadata = {
   title: 'Jawaab AI - Never Miss Another Customer',
   description: 'When you can\'t answer the phone, Jawaab AI answers for you, captures every lead, and instantly sends you a WhatsApp summary.',
+  icons: {
+    icon: '/icon.png',
+    shortcut: '/icon.png',
+    apple: '/icon.png',
+  },
 };
 
 export default function RootLayout({

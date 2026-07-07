@@ -51,8 +51,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <aside className="w-16 md:w-64 border-r border-border bg-surface flex flex-col transition-all duration-200 shrink-0">
         <div className="h-16 flex items-center justify-center md:justify-start px-4 md:px-6 border-b border-border">
           {/* Logo representation */}
-          <div className="md:hidden">
-            <div className="w-5 h-5 rounded-full bg-accent animate-pulse"></div>
+          <div className="md:hidden flex items-center justify-center py-1">
+            <img src="/icon.png" alt="Jawaab AI Icon" className="w-8 h-8 object-contain" />
           </div>
           <div className="hidden md:block">
             <BrandLogo size="sm" />
@@ -89,12 +89,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <button 
             onClick={async () => {
               try {
+                await supabase.auth.signOut();
                 await fetch('/api/auth', { method: 'DELETE' });
               } catch (e) {
-                console.error('Logout API failed:', e);
+                console.error('Logout failed:', e);
               }
               document.cookie = "jawaab_admin_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT;";
-              router.push('/login');
+              router.push('/');
             }}
             className="flex items-center justify-center md:justify-start gap-3 px-3 py-2.5 md:py-2 rounded-md text-sm font-medium text-secondary hover:text-white hover:bg-red-500/10 transition-colors w-full"
             title="Sign Out"

@@ -1,29 +1,59 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { BrandLogo } from './BrandLogo';
+import { supabase } from '../../lib/supabase-client';
 import { Button } from './Button';
-import { X, CheckCircle, Flame, Shield, HelpCircle, PhoneCall } from 'lucide-react';
+import { X, CheckCircle, Flame, Shield, HelpCircle, PhoneCall, User } from 'lucide-react';
 
 export function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setUser(session?.user ?? null);
+      setLoading(false);
+    };
+    checkAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const handleStartTrial = () => {
     setIsOpen(false);
     router.push('/login?mode=signup');
   };
 
+  // Get user initial for the avatar
+  const userInitial = user?.email ? user.email[0].toUpperCase() : 'U';
+
   return (
     <>
-      <nav className="fixed top-0 inset-x-0 h-16 border-b border-border bg-background/80 backdrop-blur-md z-50 grid grid-cols-3 items-center px-4 md:px-12">
-        {/* Left Links */}
-        <div className="flex items-center gap-4 md:gap-6 justify-start">
+      <nav className="fixed top-0 inset-x-0 h-16 border-b border-border bg-background/80 backdrop-blur-md z-50 flex items-center justify-between px-4 md:px-12">
+        {/* Left: Logo - fills full navbar height */}
+        <a href="/" className="flex items-center h-full py-1.5 shrink-0">
+          <img 
+            src="/logo-navbar.png" 
+            alt="Jawaab AI" 
+            className="h-full w-auto object-contain invert brightness-200"
+            style={{ filter: 'invert(1) brightness(2) hue-rotate(180deg)' }}
+          />
+        </a>
+
+        {/* Center Links */}
+        <div className="hidden md:flex items-center gap-6">
           <a 
             href="/pricing" 
-            className={`text-xs md:text-sm font-medium transition-colors ${
+            className={`text-sm font-medium transition-colors ${
               pathname === '/pricing' ? 'text-primary' : 'text-secondary hover:text-primary'
             }`}
           >
@@ -31,7 +61,7 @@ export function Navbar() {
           </a>
           <a 
             href="/faq" 
-            className={`text-xs md:text-sm font-medium transition-colors ${
+            className={`text-sm font-medium transition-colors ${
               pathname === '/faq' ? 'text-primary' : 'text-secondary hover:text-primary'
             }`}
           >
@@ -39,7 +69,7 @@ export function Navbar() {
           </a>
           <a 
             href="/demo" 
-            className={`text-xs md:text-sm font-medium transition-colors ${
+            className={`text-sm font-medium transition-colors ${
               pathname === '/demo' ? 'text-primary' : 'text-secondary hover:text-primary'
             }`}
           >
@@ -47,23 +77,39 @@ export function Navbar() {
           </a>
         </div>
         
-        {/* Center Logo */}
-        <div className="flex justify-center">
-          <a href="/">
-            <BrandLogo size="sm" />
-          </a>
-        </div>
-        
-        {/* Right CTA */}
-        <div className="flex items-center gap-3 md:gap-5 justify-end">
-          <a href="/login" className="text-xs md:text-sm font-medium text-secondary hover:text-primary transition-colors">Log in</a>
-          <Button 
-            size="sm" 
-            className="text-xs px-3 py-1.5 md:px-4 md:py-2 font-bold bg-accent text-background hover:bg-accent/80 border border-accent/20" 
-            onClick={() => setIsOpen(true)}
-          >
-            Try free
-          </Button>
+        {/* Right: Auth-aware actions */}
+        <div className="flex items-center gap-3 md:gap-4">
+          {loading ? (
+            <div className="w-8 h-8 rounded-full bg-surface animate-pulse"></div>
+          ) : user ? (
+            /* Logged in: show profile avatar */
+            <button
+              onClick={() => router.push('/dashboard')}
+              className="flex items-center gap-2.5 group"
+              title="Go to Dashboard"
+            >
+              <div className="w-8 h-8 rounded-full bg-accent/20 border border-accent/30 flex items-center justify-center text-accent font-bold text-xs group-hover:bg-accent/30 transition-colors">
+                {userInitial}
+              </div>
+              <span className="hidden md:inline text-sm font-medium text-secondary group-hover:text-white transition-colors">
+                Dashboard
+              </span>
+            </button>
+          ) : (
+            /* Not logged in: show Try free + Sign in */
+            <>
+              <a href="/login" className="text-xs md:text-sm font-medium text-secondary hover:text-primary transition-colors">
+                Sign in
+              </a>
+              <Button 
+                size="sm" 
+                className="text-xs px-3 py-1.5 md:px-4 md:py-2 font-bold bg-accent text-background hover:bg-accent/80 border border-accent/20" 
+                onClick={() => setIsOpen(true)}
+              >
+                Try free
+              </Button>
+            </>
+          )}
         </div>
       </nav>
 

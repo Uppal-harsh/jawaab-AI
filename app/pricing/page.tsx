@@ -201,7 +201,7 @@ export default function PricingPage() {
 
       {/* Footer */}
       <footer className="py-6 border-t border-border text-center text-xs text-secondary bg-background/50">
-        <p>© 2026 Jawab AI. All rights reserved.</p>
+        <p>© 2026 Jawaab AI. All rights reserved.</p>
       </footer>
 
     </div>

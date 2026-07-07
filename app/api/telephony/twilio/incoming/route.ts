@@ -62,7 +62,7 @@ export async function POST(req: Request) {
       const dialTwiXml = `
         <Response>
           <Dial timeout="20">${fallbackNumber}</Dial>
-          <Say voice="Polly.Aditi" language="en-IN">The owner is currently busy. Connecting you to Jawab AI receptionist.</Say>
+          <Say voice="Polly.Aditi" language="en-IN">The owner is currently busy. Connecting you to Jawaab AI receptionist.</Say>
           <Redirect>/api/telephony/twilio/incoming/process?business_id=${business.id}&amp;force_ai=true</Redirect>
         </Response>
       `.trim();

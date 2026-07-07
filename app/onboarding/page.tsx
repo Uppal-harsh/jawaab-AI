@@ -130,7 +130,7 @@ export default function OnboardingPage() {
         <div className="flex flex-col items-center text-center space-y-2">
           <BrandLogo size="md" className="mb-2" />
           <h1 className="text-2xl font-bold tracking-tight text-white font-syne">Configure Your Receptionist</h1>
-          <p className="text-secondary text-xs">Let's align Jawab AI to match your business requirements.</p>
+          <p className="text-secondary text-xs">Let's align Jawaab AI to match your business requirements.</p>
         </div>
 
         {/* Step Indicator */}
@@ -277,7 +277,7 @@ export default function OnboardingPage() {
           {/* STEP 4: Goals */}
           {step === 4 && (
             <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-300">
-              <h2 className="text-sm font-semibold text-white uppercase tracking-wider">4. What is your primary goal with Jawab AI?</h2>
+              <h2 className="text-sm font-semibold text-white uppercase tracking-wider">4. What is your primary goal with Jawaab AI?</h2>
               <div className="space-y-2.5">
                 {[
                   { value: 'leads', label: 'Capture and secure incoming bookings & customer leads' },

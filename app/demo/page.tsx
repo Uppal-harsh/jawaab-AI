@@ -11,11 +11,11 @@ export default function DemoPage() {
   const router = useRouter();
   const [isPlaying, setIsPlaying] = useState(false);
 
-  // Workflow steps detailing how Jawab AI works
+  // Workflow steps detailing how Jawaab AI works
   const demoSteps = [
     {
       title: '1. Missed Call Forwarding',
-      description: 'A customer dials your business number. If you are busy, reject the call, or are out of coverage, your carrier automatically routes the call to your Jawab AI virtual SIP channel.',
+      description: 'A customer dials your business number. If you are busy, reject the call, or are out of coverage, your carrier automatically routes the call to your Jawaab AI virtual SIP channel.',
       icon: <PhoneCall className="w-5 h-5 text-accent" />,
       time: '0:05'
     },
@@ -33,7 +33,7 @@ export default function DemoPage() {
     },
     {
       title: '4. Summary Dispatch',
-      description: 'Immediately after the call ends, Jawab AI compiles caller names, requested callbacks, intent, and summary details into a WhatsApp message and dispatches it directly to you.',
+      description: 'Immediately after the call ends, Jawaab AI compiles caller names, requested callbacks, intent, and summary details into a WhatsApp message and dispatches it directly to you.',
       icon: <MessageSquare className="w-5 h-5 text-[#25D366]" />,
       time: '0:50'
     }
@@ -54,7 +54,7 @@ export default function DemoPage() {
         {/* Page Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-6xl font-semibold tracking-tighter mb-4 font-syne text-white">
-            Watch Jawab AI in Action.
+            Watch Jawaab AI in Action.
           </h1>
           <p className="text-secondary text-sm md:text-base text-balance max-w-xl mx-auto">
             See how the voice receptionist operates in real-time, handles Hinglish calls, and forwards lead alerts directly to your WhatsApp.
@@ -78,7 +78,7 @@ export default function DemoPage() {
                     <Play className="w-6 h-6 fill-current" />
                   </button>
                   <p className="text-xs font-semibold tracking-wider text-white uppercase">Play Demo Video</p>
-                  <p className="text-[10px] text-secondary mt-1">1 minute walkthrough of Jawab AI</p>
+                  <p className="text-[10px] text-secondary mt-1">1 minute walkthrough of Jawaab AI</p>
                 </div>
               ) : (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/90">
@@ -98,7 +98,7 @@ export default function DemoPage() {
                 <div className="absolute inset-0 z-0 bg-gradient-to-br from-[#1b1b1b] to-[#121212] flex flex-col justify-between p-6">
                   {/* Mock Top Info */}
                   <div className="flex justify-between items-center text-xs text-secondary">
-                    <span>Jawab AI Receptionist Walkthrough</span>
+                    <span>Jawaab AI Receptionist Walkthrough</span>
                     <span>1:00 min</span>
                   </div>
                   {/* Mock Center Wave animation */}
@@ -129,7 +129,7 @@ export default function DemoPage() {
               <div>
                 <h4 className="text-sm font-semibold text-white">Interactive Call Testing</h4>
                 <p className="text-xs text-secondary mt-1">
-                  Want to try dialing Jawab AI live? Click here to register and trigger a mock call directly to your admin console.
+                  Want to try dialing Jawaab AI live? Click here to register and trigger a mock call directly to your admin console.
                 </p>
               </div>
             </div>
@@ -171,7 +171,7 @@ export default function DemoPage() {
 
       {/* Footer */}
       <footer className="py-6 border-t border-border text-center text-xs text-secondary bg-background/50">
-        <p>© 2026 Jawab AI. All rights reserved.</p>
+        <p>© 2026 Jawaab AI. All rights reserved.</p>
       </footer>
 
     </div>

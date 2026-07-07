@@ -120,7 +120,7 @@ export default function LandingPage() {
           <a href="/demo" className="hover:text-white transition-colors">Demo</a>
           <a href="/login" className="hover:text-white transition-colors">Log In</a>
         </div>
-        <p>© 2026 Jawab AI. All rights reserved.</p>
+        <p>© 2026 Jawaab AI. All rights reserved.</p>
       </footer>
     </div>
   );

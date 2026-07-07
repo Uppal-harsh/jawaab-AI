@@ -275,7 +275,7 @@ export default function CallLogs() {
                     }`}
                   >
                     <span className="font-bold text-[9px] uppercase tracking-wider mb-1 text-white">
-                      {line.role === 'user' ? 'Caller' : 'Jawab AI'}
+                      {line.role === 'user' ? 'Caller' : 'Jawaab AI'}
                     </span>
                     {line.content}
                   </div>

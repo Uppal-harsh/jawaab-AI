@@ -86,7 +86,7 @@ export function InteractiveDemo() {
           <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-accent/20 flex items-center justify-center mb-4 md:mb-6">
             <Phone className="w-6 h-6 md:w-8 md:h-8 text-accent animate-pulse" />
           </div>
-          <h3 className="text-lg md:text-xl font-medium mb-1 md:mb-2">Jawab AI</h3>
+          <h3 className="text-lg md:text-xl font-medium mb-1 md:mb-2">Jawaab AI</h3>
           <p className="text-secondary text-sm mb-8 md:mb-12">Ringing...</p>
           
           <div className="demo-ai-wave flex items-end gap-1 h-10 md:h-12 opacity-0">

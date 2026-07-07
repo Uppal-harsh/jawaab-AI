@@ -22,23 +22,23 @@ export default function FAQPage() {
   const faqs: FAQItem[] = [
     {
       category: 'general',
-      question: 'Is Jawab AI a standard chatbot or automated IVR?',
-      answer: 'No. Traditional IVRs force callers to press keys (e.g., "Press 1 for Sales"). Chatbots rely on static script paths. Jawab AI acts as a natural conversational voice receptionist. It listens to the caller, understands context, speaks fluidly (in English, Hindi, or Hinglish), answers custom business questions using your knowledge cards, and captures lead information just like a real human receptionist.'
+      question: 'Is Jawaab AI a standard chatbot or automated IVR?',
+      answer: 'No. Traditional IVRs force callers to press keys (e.g., "Press 1 for Sales"). Chatbots rely on static script paths. Jawaab AI acts as a natural conversational voice receptionist. It listens to the caller, understands context, speaks fluidly (in English, Hindi, or Hinglish), answers custom business questions using your knowledge cards, and captures lead information just like a real human receptionist.'
     },
     {
       category: 'general',
-      question: 'Does Jawab AI sound like a robot?',
+      question: 'Does Jawaab AI sound like a robot?',
       answer: 'We utilize state-of-the-art voice synthesize models from Sarvam AI, fine-tuned specifically for Indian accents and dual-language switching (Hinglish/Hindi/English). The result is a highly natural, friendly tone (options like Meera or Ravish) that callers can converse with comfortably.'
     },
     {
       category: 'telephony',
       question: 'Do I need to change my business phone number?',
-      answer: 'No. Through our Exotel integration, you can set up Call Forwarding on your existing mobile or landline number. When you are busy, reject a call, or are out of coverage, the carrier automatically forwards the call to your Jawab AI virtual SIP channel to answer.'
+      answer: 'No. Through our Exotel integration, you can set up Call Forwarding on your existing mobile or landline number. When you are busy, reject a call, or are out of coverage, the carrier automatically forwards the call to your Jawaab AI virtual SIP channel to answer.'
     },
     {
       category: 'telephony',
       question: 'How do I receive the lead notifications?',
-      answer: 'As soon as the call ends, Jawab AI compiles a structural summary (caller name, purpose, callback requests, and raw transcript) and instantly dispatches a WhatsApp alert to the business owner\'s phone. You can view, review transcripts, and click to return call instantly.'
+      answer: 'As soon as the call ends, Jawaab AI compiles a structural summary (caller name, purpose, callback requests, and raw transcript) and instantly dispatches a WhatsApp alert to the business owner\'s phone. You can view, review transcripts, and click to return call instantly.'
     },
     {
       category: 'pricing',
@@ -53,7 +53,7 @@ export default function FAQPage() {
     {
       category: 'config',
       question: 'How do I train the AI receptionist about my business?',
-      answer: 'You can customize Jawab AI\'s knowledge base in the Admin Dashboard. By creating simple "Knowledge Cards" (e.g., "Timings", "Consultation fees", "Address"), the receptionist automatically fetches this data and injects it into the conversation whenever a caller asks related questions.'
+      answer: 'You can customize Jawaab AI\'s knowledge base in the Admin Dashboard. By creating simple "Knowledge Cards" (e.g., "Timings", "Consultation fees", "Address"), the receptionist automatically fetches this data and injects it into the conversation whenever a caller asks related questions.'
     },
     {
       category: 'config',
@@ -100,7 +100,7 @@ export default function FAQPage() {
             Frequently Asked Questions.
           </h1>
           <p className="text-secondary text-sm md:text-base text-balance max-w-xl mx-auto">
-            Everything you need to know about Jawab AI voice receptionist for small business.
+            Everything you need to know about Jawaab AI voice receptionist for small business.
           </p>
         </div>
 
@@ -182,7 +182,7 @@ export default function FAQPage() {
 
       {/* Footer */}
       <footer className="py-6 border-t border-border text-center text-xs text-secondary bg-background/50">
-        <p>© 2026 Jawab AI. All rights reserved.</p>
+        <p>© 2026 Jawaab AI. All rights reserved.</p>
       </footer>
 
     </div>
