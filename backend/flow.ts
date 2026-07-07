@@ -115,8 +115,8 @@ export class FlowOrchestrator {
       });
 
       await this.executor.execute(parsedIntent, {
-        businessPhone: business.phone_number,
-        whatsappNumber: business.whatsapp_number,
+        businessPhone: business?.phone_number || '',
+        whatsappNumber: business?.whatsapp_number || '',
       });
     }
 

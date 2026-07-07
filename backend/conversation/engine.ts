@@ -12,17 +12,31 @@ export class ConversationEngine {
   }
 
   async getContext(businessId: string): Promise<{
-    business: BusinessContext;
+    business: BusinessContext | null;
     settings: BusinessSettings;
-    promptConfig: PromptConfig;
+    promptConfig: PromptConfig | null;
     cards: KnowledgeCard[];
   }> {
-    const [business, settings, promptConfig, cards] = await Promise.all([
-      this.storage.getBusinessDetails(businessId),
-      this.storage.getBusinessSettings(businessId),
-      this.storage.getPromptConfig(businessId),
-      this.storage.getKnowledgeCards(businessId),
-    ]);
+    let business: BusinessContext | null = null;
+    let settings: BusinessSettings | null = null;
+    let promptConfig: PromptConfig | null = null;
+    let cards: KnowledgeCard[] = [];
+
+    try {
+      const results = await Promise.allSettled([
+        this.storage.getBusinessDetails(businessId),
+        this.storage.getBusinessSettings(businessId),
+        this.storage.getPromptConfig(businessId),
+        this.storage.getKnowledgeCards(businessId),
+      ]);
+
+      if (results[0].status === 'fulfilled') business = results[0].value;
+      if (results[1].status === 'fulfilled') settings = results[1].value;
+      if (results[2].status === 'fulfilled') promptConfig = results[2].value;
+      if (results[3].status === 'fulfilled') cards = results[3].value || [];
+    } catch (err) {
+      console.warn('[ConversationEngine] Failed to load database context:', err);
+    }
 
     const fallbackSettings: BusinessSettings = {
       id: '',

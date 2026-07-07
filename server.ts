@@ -77,6 +77,12 @@ app.prepare().then(() => {
 
   wss.on('connection', (ws: WebSocket, request: http.IncomingMessage, businessIdParam: string) => {
     console.log('[WebSocket] Exotel media stream connection established');
+    console.log('[WebSocket] businessId:', businessIdParam);
+    console.log('[WebSocket] URL:', request.url);
+
+    ws.on('error', (error) => {
+      console.error('[WebSocket Error]:', error);
+    });
     const storage = new SupabaseStorageProvider();
     const llm = new OpenRouterLLMProvider();
     const notification = new WhatsAppNotificationProvider();
@@ -249,8 +255,8 @@ app.prepare().then(() => {
       }
     });
 
-    ws.on('close', () => {
-      console.log('[WebSocket] Connection closed by remote');
+    ws.on('close', (code, reason) => {
+      console.log('[WebSocket Closed] Code:', code, 'Reason:', reason?.toString());
       if (playbackIntervalId) clearInterval(playbackIntervalId);
     });
   });
