@@ -66,15 +66,16 @@ app.prepare().then(() => {
   server.on('upgrade', (request, socket, head) => {
     const parsedUrl = parse(request.url || '', true);
     if (parsedUrl.pathname === '/api/telephony/stream') {
+      const businessIdFromUrl = parsedUrl.query.business_id as string;
       wss.handleUpgrade(request, socket, head, (ws) => {
-        wss.emit('connection', ws, request);
+        wss.emit('connection', ws, request, businessIdFromUrl);
       });
     } else {
       socket.destroy();
     }
   });
 
-  wss.on('connection', (ws: WebSocket, request: http.IncomingMessage) => {
+  wss.on('connection', (ws: WebSocket, request: http.IncomingMessage, businessIdParam: string) => {
     console.log('[WebSocket] Exotel media stream connection established');
     const storage = new SupabaseStorageProvider();
     const llm = new OpenRouterLLMProvider();
@@ -83,7 +84,7 @@ app.prepare().then(() => {
 
     let streamSid = '';
     let callSid = '';
-    let businessId = '';
+    let businessId = businessIdParam || '';
     let audioBuffer: Buffer[] = [];
     let isProcessing = false;
     let hasSpoken = false;
@@ -106,7 +107,8 @@ app.prepare().then(() => {
     }
 
     async function processSpeech() {
-      if (audioBuffer.length === 0) {
+      if (audioBuffer.length === 0 || !businessId) {
+        console.warn('[WebSocket] Cannot process speech: no audio or no businessId');
         isProcessing = false;
         return;
       }
@@ -199,19 +201,6 @@ app.prepare().then(() => {
           streamSid = data.streamSid;
           callSid = data.callSid;
           console.log(`[WebSocket] Session start received: streamSid=${streamSid}, callSid=${callSid}`);
-          
-          storage.getCallSession(callSid)
-            .then(call => {
-              if (call) {
-                businessId = call.business_id;
-                console.log(`[WebSocket] Dynamically resolved businessId from call log: ${businessId}`);
-              } else {
-                console.warn(`[WebSocket] Warning: Call session not found in database for callSid: ${callSid}`);
-              }
-            })
-            .catch(err => {
-              console.error('[WebSocket] Database query error resolving call session:', err);
-            });
           return;
         }
 

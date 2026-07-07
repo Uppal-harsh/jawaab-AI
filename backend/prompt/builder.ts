@@ -5,12 +5,13 @@ export class PromptBuilder {
    * Compiles the optimized prompt instructions matching tone, language, and knowledge cards.
    */
   static buildSystemPrompt(
-    business: BusinessContext,
+    business: BusinessContext | null,
     settings: BusinessSettings,
     config: PromptConfig | null,
     matchedCards: KnowledgeCard[]
   ): string {
-    const defaultPrompt = `You are a warm, polite AI receptionist named Meera for "${business.name}". Your task is to greet callers, answer questions accurately, and collect lead details.`;
+    const businessName = business?.name || 'Our Business';
+    const defaultPrompt = `You are a warm, polite AI receptionist named Meera for "${businessName}". Your task is to greet callers, answer questions accurately, and collect lead details.`;
     const baseSystemPrompt = config?.system_prompt || defaultPrompt;
     const safetyRules = config?.safety_rules || "Be polite. Do not hallucinate facts outside the provided cards. Keep answers short.";
 
@@ -35,12 +36,14 @@ export class PromptBuilder {
       knowledgeBaseContext = `\nNo specific business facts matched. If you do not know the answer, politely tell the caller you don't have that detail and will have the owner callback.`;
     }
 
+    const ownerName = business?.owner_name || 'Our Team';
+
     return `
 ${baseSystemPrompt}
-
+ 
 ## OPERATING RULES & PERSONALITY:
-- Business: ${business.name}
-- Owner: ${business.owner_name}
+- Business: ${businessName}
+- Owner: ${ownerName}
 - Tone: Professional, warm, welcoming, and helpful.
 - ${languageInstructions}
 - Voice Gender Profile: ${settings.voice_gender}
