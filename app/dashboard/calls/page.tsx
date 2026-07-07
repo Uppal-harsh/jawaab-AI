@@ -234,7 +234,7 @@ export default function CallLogs() {
               ) : (
                 <tr>
                   <td colSpan={5} className="px-6 py-12 text-center text-xs text-secondary">
-                    No live database call logs found. Secure your Twilio line to receive incoming signals.
+                    No live database call logs found. Secure your Exotel line to receive incoming signals.
                   </td>
                 </tr>
               )}

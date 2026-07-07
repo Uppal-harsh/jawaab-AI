@@ -91,7 +91,7 @@ export default function OnboardingPage() {
             fallback_number: '+919999999999',
             voice_gender: 'female',
             greeting_message: `Namaste. Welcome to our ${businessType} clinic. How can we help you?`,
-            telephony_provider: 'twilio',
+            telephony_provider: 'exotel',
             answering_mode: 'always_answer'
           })
         });

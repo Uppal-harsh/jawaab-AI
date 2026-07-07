@@ -152,7 +152,7 @@ export default function DashboardOverview() {
             })
           ) : (
             <div className="px-6 py-12 text-center text-xs text-secondary">
-              No recent calls logged. Connect your Twilio webhook to forward live traffic.
+              No recent calls logged. Connect your Exotel webhook to forward live traffic.
             </div>
           )}
         </div>

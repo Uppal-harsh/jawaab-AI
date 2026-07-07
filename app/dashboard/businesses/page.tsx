@@ -401,7 +401,6 @@ export default function BusinessProfile() {
                   className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:border-accent text-white transition-colors"
                 >
                   <option value="exotel">Exotel Gateway</option>
-                  <option value="twilio">Twilio Cloud Gateway</option>
                 </select>
               </div>
 
@@ -418,7 +417,7 @@ export default function BusinessProfile() {
                 <p className="text-[10px] text-secondary mt-1 leading-relaxed">
                   {answeringMode === 'always_answer' 
                     ? 'The AI agent answers immediately when dialed.' 
-                    : 'Twilio will dial your fallback phone number first. AI receptionist speaks only if you do not pick up.'
+                    : 'Exotel will dial your fallback phone number first. AI receptionist speaks only if you do not pick up.'
                   }
                 </p>
               </div>

@@ -87,7 +87,7 @@ export class SarvamService {
     languageCode = 'hi-IN'
   ): Promise<SynthesizeResult> {
     const url = `${this.baseUrl}/text-to-speech`;
-    const speaker = voiceGender === 'female' ? 'meera' : 'ravish'; // meera and ravish are high quality Indic voices in Sarvam
+    const speaker = voiceGender === 'female' ? 'anushka' : 'abhilash'; // anushka and abhilash are active recognized speakers in Sarvam
 
     const body = {
       inputs: [text],
