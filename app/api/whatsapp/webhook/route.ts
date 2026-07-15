@@ -5,6 +5,7 @@ import { SupabaseStorageProvider } from '../../../../backend/providers/supabase-
 import { OpenRouterLLMProvider } from '../../../../backend/providers/openrouter';
 import { WhatsAppNotificationProvider } from '../../../../backend/providers/whatsapp';
 import { WhatsAppService } from '../../../../services/whatsapp';
+import { GoogleCalendarService } from '../../../../services/google-calendar';
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -115,30 +116,92 @@ export async function POST(req: Request) {
 
     const replyText = await orchestrator.processCallTurn(telephonyCallId, messageText, business.id);
 
-    // 4. Update CRM status if specific intent is parsed
+    // 4. Update CRM status, process Calendar Sync and alert Owner if intents match
     if (replyText.includes('[INTENT: BookAppointment]')) {
-      // Transition CRM lead status
+      let bookedDateText = '';
+      const dateMatch = replyText.match(/\[DATE:\s*([^\]]+)\]/);
+      if (dateMatch) {
+        bookedDateText = dateMatch[1].trim();
+      } else {
+        bookedDateText = new Date(Date.now() + 24 * 60 * 60 * 1000).toLocaleDateString() + ' 3:00 PM'; // Fallback to tomorrow 3pm
+      }
+
+      // Convert booked date text into ISO strings for Google Calendar
+      let startISO = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+      let endISO = new Date(Date.now() + 25 * 60 * 60 * 1000).toISOString();
+      try {
+        const parsedDate = new Date(bookedDateText);
+        if (!isNaN(parsedDate.getTime())) {
+          startISO = parsedDate.toISOString();
+          endISO = new Date(parsedDate.getTime() + 60 * 60 * 1000).toISOString(); // 1 hour booking duration
+        }
+      } catch (e) {
+        console.error('[Calendar Sync] Failed parsing bookedDateText, using fallback.', e);
+      }
+
+      // Sync event directly to Google Calendar
+      const calendarSync = await GoogleCalendarService.createEvent(
+        `Appointment: ${customerName}`,
+        `Customer Phone: ${customerPhone}\nReason: WhatsApp CRM Automated Booking`,
+        startISO,
+        endISO
+      );
+
+      const calendarLog = calendarSync.success 
+        ? `Synced with Google Calendar. Event ID: ${calendarSync.eventId} (${calendarSync.simulated ? 'Simulated' : 'API'})`
+        : 'Failed to sync with Google Calendar API.';
+
+      // Transition CRM lead status in DB
       await supabaseAdmin
         .from('call_summaries')
         .update({
           lead_status: 'Appointment Booked',
-          appointment_date: new Date(Date.now() + 24 * 60 * 60 * 1000).toLocaleDateString() + ' 3:00 PM', // Fallback placeholder to tomorrow 3pm
-          reason_for_call: 'Booked appointment via WhatsApp'
+          appointment_date: bookedDateText,
+          reason_for_call: 'Booked appointment via WhatsApp',
+          notes: calendarLog
         })
         .eq('call_id', chatId);
+
+      // Revert/Send structured summary notification to the business owner's WhatsApp number
+      const alertPayload = {
+        callerName: customerName,
+        callerPhone: customerPhone,
+        reason: 'Booked Appointment',
+        summary: `Customer successfully booked an appointment for: ${bookedDateText}. Calendar Sync status: ${calendarSync.success ? 'Success' : 'Failed'}.`,
+        urgency: 'high' as const,
+        callbackRequested: false,
+        durationSeconds: 0
+      };
+      
+      await WhatsAppService.sendCallSummaryNotification(business.whatsapp_number, alertPayload);
+
     } else if (replyText.includes('[INTENT: RequestHuman]')) {
       await supabaseAdmin
         .from('call_summaries')
         .update({ lead_status: 'Contacted', callback_requested: true })
         .eq('call_id', chatId);
+
+      // Dispatch urgent callback alert to owner's WhatsApp
+      const alertPayload = {
+        callerName: customerName,
+        callerPhone: customerPhone,
+        reason: 'Requested Human Assistance',
+        summary: `Customer requested manual support. Message text: "${messageText}".`,
+        urgency: 'high' as const,
+        callbackRequested: true,
+        durationSeconds: 0
+      };
+      
+      await WhatsAppService.sendCallSummaryNotification(business.whatsapp_number, alertPayload);
     }
 
-    // Strip out LLM intents formatting before sending to client
+    // Strip out LLM intents formatting before sending response to Meta WhatsApp Client
     const cleanedReply = replyText
       .replace(/\[INTENT:\s*[A-Za-z]+\]/g, '')
+      .replace(/\[DATE:\s*[^\]]+\]/g, '')
       .trim();
 
-    // 5. Send message response back to Meta API
+    // 5. Send message response back to customer's WhatsApp
     const isSent = await WhatsAppService.sendTextMessage(customerPhone, cleanedReply);
 
     return NextResponse.json({ ok: isSent, reply: cleanedReply });

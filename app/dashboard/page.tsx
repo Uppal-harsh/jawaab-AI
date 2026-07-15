@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { MessageSquare, UserCheck, Calendar, TrendingUp, Loader2, PhoneIncoming } from 'lucide-react';
+import { MessageSquare, UserCheck, Calendar, TrendingUp, Loader2, ClipboardList } from 'lucide-react';
 
 interface DBLogItem {
   id: string;
@@ -62,6 +62,15 @@ export default function DashboardOverview() {
     ? `${Math.round(((totalCalls - callbackRequests) / totalCalls) * 100)}%`
     : '100%';
 
+  // Lead status aggregation
+  const leadStatuses = ['New', 'Contacted', 'Appointment Booked', 'Closed'];
+  const statusCounts = leadStatuses.reduce((acc, status) => {
+    acc[status] = calls.filter(c => (c.call_summaries?.lead_status || 'New') === status).length;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const maxCount = Math.max(...Object.values(statusCounts), 1);
+
   const stats = [
     { label: 'WhatsApp Chats', value: String(totalCalls), change: 'Live', icon: <MessageSquare className="w-5 h-5" /> },
     { label: 'CRM Leads', value: String(leadsCaptured), change: 'Database', icon: <UserCheck className="w-5 h-5" /> },
@@ -105,10 +114,69 @@ export default function DashboardOverview() {
         ))}
       </div>
 
+      {/* SVG Bar Chart & Customer Personal Logs Summary */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 bg-surface border border-border rounded-xl p-6 shadow-sm">
+          <h2 className="font-semibold text-primary mb-2 font-syne">Lead Status Distribution</h2>
+          <p className="text-xs text-secondary mb-6">Current count of leads classified by CRM conversion status stages.</p>
+          <div className="h-48 flex items-end justify-between gap-4 px-2 md:px-6 border-b border-border pb-2">
+            {leadStatuses.map((status) => {
+              const count = statusCounts[status];
+              const heightPercent = (count / maxCount) * 80 + 10; // min 10% height for visual balance
+              return (
+                <div key={status} className="flex-1 flex flex-col items-center gap-2 group h-full justify-end">
+                  <span className="text-xs font-bold text-accent group-hover:scale-110 transition-transform">
+                    {count}
+                  </span>
+                  <div 
+                    className="w-full bg-accent/15 border border-accent/25 rounded-t-lg transition-all duration-300 hover:bg-accent/30 hover:border-accent/40"
+                    style={{ height: `${heightPercent}%` }}
+                  ></div>
+                  <span className="text-[9px] md:text-xs text-secondary font-semibold uppercase tracking-wider truncate max-w-full">
+                    {status === 'Appointment Booked' ? 'Booked' : status}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Customer Personal Logs Summary */}
+        <div className="bg-surface border border-border rounded-xl p-6 shadow-sm flex flex-col justify-between">
+          <div className="border-b border-border pb-3 mb-3">
+            <h2 className="font-semibold text-primary mb-1 font-syne flex items-center gap-2">
+              <ClipboardList className="w-4 h-4 text-accent" />
+              CRM Log Stream
+            </h2>
+            <p className="text-[10px] text-secondary">Latest internal logs and calendar synchronization notes.</p>
+          </div>
+          <div className="flex-1 space-y-3 overflow-y-auto max-h-44 pr-1 scrollbar-thin">
+            {calls.some(c => c.call_summaries?.notes) ? (
+              calls
+                .filter(c => c.call_summaries?.notes)
+                .slice(0, 3)
+                .map((call) => (
+                  <div key={call.id} className="bg-background border border-border p-2.5 rounded-lg text-xs leading-relaxed">
+                    <div className="flex justify-between items-center mb-1 border-b border-border/10 pb-1">
+                      <span className="font-bold text-[10px] text-accent font-mono">{call.call_summaries?.customer_name || 'Client'}</span>
+                      <span className="text-[8px] text-secondary font-mono">{new Date(call.start_time).toLocaleDateString()}</span>
+                    </div>
+                    <p className="text-secondary italic text-[11px] leading-relaxed">"{call.call_summaries?.notes}"</p>
+                  </div>
+                ))
+            ) : (
+              <div className="text-center py-10 text-xs text-secondary border border-dashed border-border rounded-lg">
+                No active calendar notes or CRM logs found.
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* Recent CRM Activity View */}
       <div className="bg-surface border border-border rounded-xl shadow-sm overflow-hidden mt-8">
         <div className="px-6 py-5 border-b border-border flex justify-between items-center">
-          <h2 className="font-semibold text-primary">Recent CRM Activity</h2>
+          <h2 className="font-semibold text-primary font-syne">Recent CRM Activity</h2>
           <button onClick={() => router.push('/dashboard/calls')} className="text-xs font-medium text-accent hover:underline">View All Leads</button>
         </div>
         

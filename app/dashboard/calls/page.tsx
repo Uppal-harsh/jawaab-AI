@@ -351,13 +351,13 @@ export default function CRMLeads() {
         </div>
       )}
 
-      {/* Chat Transcript Modal */}
+      {/* Customer Hub Detail Modal */}
       {activeTranscriptCall && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="relative w-full max-w-lg bg-surface border border-border rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh] animate-in scale-in duration-300">
+          <div className="relative w-full max-w-3xl bg-surface border border-border rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in scale-in duration-300">
             <header className="px-6 py-4 border-b border-border flex items-center justify-between bg-background">
               <div>
-                <h3 className="font-semibold text-white font-syne">WhatsApp Conversation Transcript</h3>
+                <h3 className="font-semibold text-white font-syne">Customer Details & Conversation Hub</h3>
                 <p className="text-xs text-secondary font-mono">
                   {activeTranscriptCall.call_summaries?.customer_name || 'Unknown'} ({activeTranscriptCall.caller_number})
                 </p>
@@ -370,31 +370,93 @@ export default function CRMLeads() {
               </button>
             </header>
 
-            <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-background/50">
-              {activeTranscriptCall.call_summaries?.full_transcript && 
-              activeTranscriptCall.call_summaries.full_transcript.length > 0 ? (
-                activeTranscriptCall.call_summaries.full_transcript.map((line, idx) => (
-                  <div 
-                    key={idx} 
-                    className={`flex flex-col max-w-[80%] p-3 rounded-lg text-xs leading-relaxed ${
-                      line.role === 'user'
-                        ? 'bg-[#222] text-secondary self-start'
-                        : 'bg-[#075e54] text-white self-end border border-[#075e54]'
-                    }`}
-                  >
-                    <span className="font-bold text-[9px] uppercase tracking-wider mb-1 text-white opacity-70">
-                      {line.role === 'user' ? 'Client (WhatsApp)' : 'Jawaab AI Agent'}
-                    </span>
-                    {line.content}
+            <div className="flex-1 grid grid-cols-1 md:grid-cols-5 overflow-hidden">
+              {/* Left Column: Chat Transcript */}
+              <div className="md:col-span-3 overflow-y-auto p-6 space-y-4 bg-background/30 border-r border-border flex flex-col justify-between max-h-[55vh] md:max-h-none">
+                <div className="space-y-4">
+                  <h4 className="text-[11px] font-bold uppercase tracking-wider text-secondary mb-2">WhatsApp Conversation History</h4>
+                  {activeTranscriptCall.call_summaries?.full_transcript && 
+                  activeTranscriptCall.call_summaries.full_transcript.length > 0 ? (
+                    activeTranscriptCall.call_summaries.full_transcript.map((line, idx) => (
+                      <div 
+                        key={idx} 
+                        className={`flex flex-col max-w-[85%] p-3 rounded-lg text-xs leading-relaxed ${
+                          line.role === 'user'
+                            ? 'bg-[#222] text-secondary self-start'
+                            : 'bg-[#075e54] text-white self-end border border-[#075e54]'
+                        }`}
+                      >
+                        <span className="font-bold text-[9px] uppercase tracking-wider mb-1 text-white opacity-70">
+                          {line.role === 'user' ? 'Client' : 'Jawaab AI Agent'}
+                        </span>
+                        {line.content}
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-xs text-secondary text-center py-4">No WhatsApp messages recorded in this session.</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Right Column: CRM Profile Log & Sync Timeline */}
+              <div className="md:col-span-2 overflow-y-auto p-6 space-y-5 bg-background/10">
+                <div>
+                  <h4 className="text-[11px] font-bold uppercase tracking-wider text-secondary mb-3">Customer Profile Info</h4>
+                  <div className="bg-background border border-border p-3.5 rounded-xl space-y-2 text-xs">
+                    <p className="text-secondary"><strong>Name:</strong> {activeTranscriptCall.call_summaries?.customer_name || 'Not Provided'}</p>
+                    <p className="text-secondary"><strong>Phone:</strong> {activeTranscriptCall.caller_number}</p>
+                    <p className="text-secondary">
+                      <strong>Lead Stage:</strong> 
+                      <span className="ml-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-accent/15 border border-accent/20 text-accent uppercase">
+                        {activeTranscriptCall.call_summaries?.lead_status || 'New'}
+                      </span>
+                    </p>
+                    <p className="text-secondary"><strong>Appointment Slot:</strong> {activeTranscriptCall.call_summaries?.appointment_date || 'None Scheduled'}</p>
                   </div>
-                ))
-              ) : (
-                <p className="text-xs text-secondary text-center py-4">No WhatsApp messages recorded in this chat session.</p>
-              )}
+                </div>
+
+                <div>
+                  <h4 className="text-[11px] font-bold uppercase tracking-wider text-secondary mb-3">CRM Activity Timeline</h4>
+                  <div className="relative border-l border-border pl-4 ml-2 space-y-4 text-xs">
+                    <div className="relative">
+                      <span className="absolute -left-[21px] top-0.5 w-2.5 h-2.5 rounded-full bg-green-500"></span>
+                      <p className="font-semibold text-primary">Inquiry Session Created</p>
+                      <p className="text-[10px] text-secondary">{new Date(activeTranscriptCall.start_time).toLocaleString()}</p>
+                    </div>
+
+                    <div className="relative">
+                      <span className="absolute -left-[21px] top-0.5 w-2.5 h-2.5 rounded-full bg-accent"></span>
+                      <p className="font-semibold text-primary">Calendar & Status Details</p>
+                      <p className="text-[10px] text-secondary italic">
+                        {activeTranscriptCall.call_summaries?.notes || 'No active synchronization logs recorded.'}
+                      </p>
+                    </div>
+
+                    {activeTranscriptCall.call_summaries?.appointment_date && (
+                      <div className="relative">
+                        <span className="absolute -left-[21px] top-0.5 w-2.5 h-2.5 rounded-full bg-blue-500 animate-pulse"></span>
+                        <p className="font-semibold text-primary">Google Calendar Event Booked</p>
+                        <p className="text-[10px] text-secondary">Reserved at: {activeTranscriptCall.call_summaries.appointment_date}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <footer className="px-6 py-4 border-t border-border bg-background flex justify-end">
-              <Button size="sm" className="font-bold" onClick={() => setActiveTranscriptCall(null)}>Close Transcript</Button>
+            <footer className="px-6 py-4 border-t border-border bg-background flex justify-between">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="font-bold" 
+                onClick={() => {
+                  setActiveTranscriptCall(null);
+                  openEditModal(activeTranscriptCall);
+                }}
+              >
+                Edit CRM Details
+              </Button>
+              <Button size="sm" className="font-bold" onClick={() => setActiveTranscriptCall(null)}>Close Hub</Button>
             </footer>
           </div>
         </div>

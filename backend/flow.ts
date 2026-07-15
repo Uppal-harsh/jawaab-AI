@@ -7,6 +7,7 @@ import { AnalyticsTracker } from './analytics/tracker';
 import { eventBus } from './services/event-bus';
 import { IStorageProvider, ILLMProvider, INotificationProvider } from './providers';
 import { ChatMessage, CallEvent } from './types';
+import { supabaseAdmin } from '../lib/supabase';
 
 export class FlowOrchestrator {
   private engine: ConversationEngine;
@@ -67,8 +68,16 @@ export class FlowOrchestrator {
     // 3. Retrieve relevant Knowledge Cards (RAG)
     const matchedCards = KnowledgeRetrievalEngine.retrieveRelevantCards(callerText, cards, 3);
 
+    // Fetch active scheduled appointments to avoid conflicts
+    const { data: bookings } = await supabaseAdmin
+      .from('call_summaries')
+      .select('customer_name, appointment_date')
+      .not('appointment_date', 'is', null);
+
+    const activeBookings = bookings || [];
+
     // 4. Build system prompt
-    const systemPrompt = PromptBuilder.buildSystemPrompt(business, settings, promptConfig, matchedCards);
+    const systemPrompt = PromptBuilder.buildSystemPrompt(business, settings, promptConfig, matchedCards, activeBookings);
 
     // 5. Load short term session history
     const history = await this.memory.loadSessionHistory(callSid);

@@ -8,7 +8,8 @@ export class PromptBuilder {
     business: BusinessContext | null,
     settings: BusinessSettings,
     config: PromptConfig | null,
-    matchedCards: KnowledgeCard[]
+    matchedCards: KnowledgeCard[],
+    activeBookings: { customer_name: string | null; appointment_date: string | null }[] = []
   ): string {
     const businessName = business?.name || 'Our Business';
     const defaultPrompt = `You are a professional, polite WhatsApp Assistant for "${businessName}". Your task is to greet customers, answer questions accurately, book appointments, edit lead details, and handle inquiries.`;
@@ -36,6 +37,16 @@ export class PromptBuilder {
       knowledgeBaseContext = `\nNo specific business facts matched. If you do not know the answer, politely tell the customer you don't have that detail and will have the owner callback.`;
     }
 
+    // Active Bookings Context Injection
+    let bookingsContext = '';
+    if (activeBookings.length > 0) {
+      bookingsContext = `\n### CURRENT SCHEDULED APPOINTMENTS (To prevent overlaps, DO NOT book or suggest these slots):\n` +
+        activeBookings.map(b => `- ${b.customer_name || 'Client'}: Booked at ${b.appointment_date}`).join('\n') +
+        `\nCheck the requested date/time against these slots. If a conflict occurs, inform the customer politely and suggest other hours.`;
+    } else {
+      bookingsContext = `\nNo current scheduled appointments. All time slots are open.`;
+    }
+
     const ownerName = business?.owner_name || 'Our Team';
 
     return `
@@ -51,8 +62,8 @@ ${baseSystemPrompt}
 1. Greet customers warmly and answer queries using the business facts.
 2. Keep responses clear and readable. You can use standard WhatsApp markdown formatting (e.g. *bold* for emphasis).
 3. If they ask about services, timings, address, or pricing, refer to the business facts below.
-4. If they want to book an appointment, collect their Name, Phone, and Preferred Time.
-5. If they want to check or edit lead/CRM info, verify their name/phone and help them.
+4. If they want to book an appointment, check the list of CURRENT SCHEDULED APPOINTMENTS below. If the customer requests a time slot that overlaps with an existing booking, politely tell them that time is unavailable and suggest alternative open timings.
+5. Once a valid, non-overlapping slot is decided with the customer, collect their Name and Preferred Time.
 
 ## CONSTRAINTS:
 - ${safetyRules}
@@ -60,10 +71,12 @@ ${baseSystemPrompt}
 
 ${knowledgeBaseContext}
 
+${bookingsContext}
+
 ## INTENT ANNOTATION EMISSION:
-If the user wants to schedule/book an appointment, collect their details, then append "[INTENT: BookAppointment]" at the end of your response.
-If they request human intervention or fallback support, append "[INTENT: RequestHuman]" at the end of your response.
-If they want to end the conversation or the issue is fully resolved, append "[INTENT: EndConversation]" at the end.
+If the user wants to schedule/book an appointment and a valid time slot is agreed, append "[INTENT: BookAppointment] [DATE: YYYY-MM-DD HH:MM]" (replace with their chosen date and time) at the very end of your response.
+If they request human intervention or fallback support, append "[INTENT: RequestHuman]" at the very end of your response.
+If they want to end the conversation or the issue is fully resolved, append "[INTENT: EndConversation]" at the very end of your response.
 `.trim();
   }
 }

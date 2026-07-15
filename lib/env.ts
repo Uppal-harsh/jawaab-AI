@@ -18,9 +18,13 @@ const parseEnv = () => {
   const result = envSchema.safeParse(process.env);
 
   if (!result.success) {
-    // Check if we are building the app (Next.js phase-production-build)
-    if (process.env.NEXT_PHASE === 'phase-production-build' || process.env.NODE_ENV === 'test') {
-      console.warn('⚠️ Environment validation failed during build. Using mock fallbacks for compilation.');
+    // Check if we are building or running in local dev / test environments
+    if (
+      process.env.NEXT_PHASE === 'phase-production-build' || 
+      process.env.NODE_ENV === 'development' || 
+      process.env.NODE_ENV === 'test'
+    ) {
+      console.warn('⚠️ Environment validation failed. Using mock fallbacks for local running/compilation.');
       return {
         NEXT_PUBLIC_SUPABASE_URL: 'http://localhost:3000',
         NEXT_PUBLIC_APP_URL: 'http://localhost:3000',
