@@ -70,7 +70,7 @@ export default function NotFound() {
               Hang in there!
             </h1>
             <p className="text-secondary text-sm md:text-base max-w-md mx-auto">
-              This page seems to have slipped away or doesn't exist. Don't worry, our AI voice receptionist is still online and answering calls!
+              This page seems to have slipped away or doesn't exist. Don't worry, our AI WhatsApp automation is still online and managing chats!
             </p>
           </div>
 
@@ -83,7 +83,7 @@ export default function NotFound() {
             
             <Link href="/demo" passHref legacyBehavior>
               <Button variant="secondary" size="lg" className="w-full sm:w-auto gap-2 border border-border bg-surface/50 hover:bg-surface">
-                Test AI Receptionist
+                View Chat Demo
               </Button>
             </Link>
           </div>
