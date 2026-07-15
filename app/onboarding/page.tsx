@@ -27,6 +27,26 @@ export default function OnboardingPage() {
         // Not logged in, send to login
         router.push('/login');
       } else {
+        // Double check phone verification status
+        try {
+          const res = await fetch(`/api/auth/phone-check?userId=${session.user.id}`);
+          if (res.ok) {
+            const phoneData = await res.json();
+            if (!phoneData.verified) {
+              console.warn('[Onboarding] Enforced phone verification check failed. Signing out.');
+              await supabase.auth.signOut();
+              router.push('/login');
+              return;
+            }
+          } else {
+            await supabase.auth.signOut();
+            router.push('/login');
+            return;
+          }
+        } catch (e) {
+          console.error(e);
+        }
+
         setSessionUser(session.user);
         
         // Double check if onboarding was already completed

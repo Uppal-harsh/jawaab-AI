@@ -29,6 +29,30 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     async function checkPreferences() {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
+        // Enforce phone verification check
+        try {
+          const res = await fetch(`/api/auth/phone-check?userId=${session.user.id}`);
+          if (res.ok) {
+            const phoneData = await res.json();
+            if (!phoneData.verified) {
+              console.warn('[Dashboard] Enforced phone verification block. Signing out.');
+              await supabase.auth.signOut();
+              await fetch('/api/auth', { method: 'DELETE' });
+              document.cookie = "jawaab_admin_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT;";
+              router.push('/login');
+              return;
+            }
+          } else {
+            await supabase.auth.signOut();
+            await fetch('/api/auth', { method: 'DELETE' });
+            document.cookie = "jawaab_admin_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT;";
+            router.push('/login');
+            return;
+          }
+        } catch (e) {
+          console.error(e);
+        }
+
         const { data: pref } = await supabase
           .from('onboarding_preferences')
           .select('id')

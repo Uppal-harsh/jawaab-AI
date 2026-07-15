@@ -57,48 +57,47 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Failed to initialize verification state' }, { status: 500 });
     }
 
-    // 6. Send OTP via Twilio if credentials exist; fallback to simulated debug response
+    // 6. Send OTP via Twilio - enforce live credentials
     const accountSid = process.env.TWILIO_ACCOUNT_SID;
     const authToken = process.env.TWILIO_AUTH_TOKEN;
     const twilioPhone = process.env.TWILIO_PHONE_NUMBER;
 
-    let smsSent = false;
-    if (accountSid && authToken && twilioPhone && !accountSid.includes('your-')) {
-      try {
-        const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
-        const auth = Buffer.from(`${accountSid}:${authToken}`).toString('base64');
-        const params = new URLSearchParams();
-        params.append('To', phone);
-        params.append('From', twilioPhone);
-        params.append('Body', `Your Jawaab AI verification code is ${otpCode}. It expires in 10 minutes.`);
-
-        const res = await fetch(url, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Basic ${auth}`,
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-          body: params.toString(),
-        });
-
-        if (res.ok) {
-          smsSent = true;
-          console.log(`[OTP Send] Twilio SMS dispatched successfully to ${phone}`);
-        } else {
-          console.error('[OTP Send] Twilio API responded with error status:', res.status, await res.text());
-        }
-      } catch (smsErr) {
-        console.error('[OTP Send] Twilio fetch failed:', smsErr);
-      }
+    if (!accountSid || !authToken || !twilioPhone || accountSid.includes('your-')) {
+      return NextResponse.json({ error: 'SMS verification service is not fully configured in the environment settings (.env)' }, { status: 500 });
     }
 
-    // If Twilio isn't active or fails, return a success with simulated fallback for developer ease
+    try {
+      const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
+      const auth = Buffer.from(`${accountSid}:${authToken}`).toString('base64');
+      const params = new URLSearchParams();
+      params.append('To', phone);
+      params.append('From', twilioPhone);
+      params.append('Body', `Your Jawaab AI verification code is ${otpCode}. It expires in 10 minutes.`);
+
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Basic ${auth}`,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: params.toString(),
+      });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error('[OTP Send] Twilio API responded with error status:', res.status, errorText);
+        return NextResponse.json({ error: 'Twilio SMS service failed to deliver the message. Please check the number or credentials.' }, { status: 502 });
+      }
+
+      console.log(`[OTP Send] Twilio SMS dispatched successfully to ${phone}`);
+    } catch (smsErr) {
+      console.error('[OTP Send] Twilio fetch failed:', smsErr);
+      return NextResponse.json({ error: 'SMS delivery network error occurred' }, { status: 502 });
+    }
+
     return NextResponse.json({
       success: true,
-      simulated: !smsSent,
-      // For developer verification without active Twilio credits, expose code in mock responses
-      debugCode: !smsSent ? otpCode : undefined, 
-      message: smsSent ? 'OTP sent successfully via SMS' : 'OTP verification simulated (see console / debugCode)'
+      message: 'OTP verification code sent successfully via SMS'
     });
 
   } catch (err: any) {
