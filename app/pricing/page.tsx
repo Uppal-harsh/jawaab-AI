@@ -10,6 +10,27 @@ import { Navbar } from '../../components/ui/Navbar';
 export default function PricingPage() {
   const router = useRouter();
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'annual'>('monthly');
+  const [region, setRegion] = useState<'IN' | 'US' | 'EU'>('IN');
+
+  const getTierPrice = (tierName: string, period: 'monthly' | 'annual') => {
+    if (tierName === 'Starter') {
+      if (region === 'IN') return period === 'monthly' ? 799 : 639;
+      if (region === 'US') return period === 'monthly' ? 14.99 : 11.99;
+      return period === 'monthly' ? 14.99 : 11.99; // EU
+    }
+    if (tierName === 'Growth') {
+      if (region === 'IN') return period === 'monthly' ? 1499 : 1199;
+      if (region === 'US') return period === 'monthly' ? 34.99 : 27.99;
+      return period === 'monthly' ? 34.99 : 27.99; // EU
+    }
+    return null; // Enterprise
+  };
+
+  const getCurrencySymbol = () => {
+    if (region === 'IN') return '₹';
+    if (region === 'US') return '$';
+    return '€';
+  };
 
   // Multi-step trial signup states
   const [showSignupModal, setShowSignupModal] = useState(false);
@@ -258,33 +279,72 @@ export default function PricingPage() {
           </p>
         </div>
 
-        {/* Toggle Switch */}
-        <div className="flex items-center gap-4 mb-12 bg-surface p-1.5 rounded-full border border-border">
-          <button
-            onClick={() => setBillingPeriod('monthly')}
-            className={`px-4 py-1.5 text-xs font-semibold rounded-full transition-all ${
-              billingPeriod === 'monthly' ? 'bg-white text-black' : 'text-secondary hover:text-white'
-            }`}
-          >
-            Monthly Billing
-          </button>
-          <button
-            onClick={() => setBillingPeriod('annual')}
-            className={`px-4 py-1.5 text-xs font-semibold rounded-full transition-all flex items-center gap-1.5 ${
-              billingPeriod === 'annual' ? 'bg-white text-black' : 'text-secondary hover:text-white'
-            }`}
-          >
-            Annual Billing
-            <span className="text-[9px] bg-accent/20 text-accent font-bold px-2 py-0.5 rounded-full">Save 20%</span>
-          </button>
+        {/* Toggles (Billing Period & Region Selector) */}
+        <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 mb-12">
+          {/* Billing Period Toggle */}
+          <div className="flex items-center gap-2 bg-surface p-1.5 rounded-full border border-border">
+            <button
+              onClick={() => setBillingPeriod('monthly')}
+              className={`px-4 py-1.5 text-xs font-semibold rounded-full transition-all ${
+                billingPeriod === 'monthly' ? 'bg-white text-black font-bold' : 'text-secondary hover:text-white'
+              }`}
+            >
+              Monthly Billing
+            </button>
+            <button
+              onClick={() => setBillingPeriod('annual')}
+              className={`px-4 py-1.5 text-xs font-semibold rounded-full transition-all flex items-center gap-1.5 ${
+                billingPeriod === 'annual' ? 'bg-white text-black font-bold' : 'text-secondary hover:text-white'
+              }`}
+            >
+              Annual Billing
+              <span className="text-[9px] bg-accent/20 text-accent font-bold px-2 py-0.5 rounded-full">Save 20%</span>
+            </button>
+          </div>
+
+          {/* Region / Currency selector */}
+          <div className="flex items-center gap-2 bg-surface p-1.5 rounded-full border border-border">
+            <button
+              onClick={() => setRegion('IN')}
+              className={`px-4 py-1.5 text-xs font-semibold rounded-full transition-all ${
+                region === 'IN' ? 'bg-white text-black font-bold' : 'text-secondary hover:text-white'
+              }`}
+            >
+              🇮🇳 India (₹)
+            </button>
+            <button
+              onClick={() => setRegion('US')}
+              className={`px-4 py-1.5 text-xs font-semibold rounded-full transition-all ${
+                region === 'US' ? 'bg-white text-black font-bold' : 'text-secondary hover:text-white'
+              }`}
+            >
+              🇺🇸 Outside India - US ($)
+            </button>
+            <button
+              onClick={() => setRegion('EU')}
+              className={`px-4 py-1.5 text-xs font-semibold rounded-full transition-all ${
+                region === 'EU' ? 'bg-white text-black font-bold' : 'text-secondary hover:text-white'
+              }`}
+            >
+              🇪🇺 Outside India - Europe (€)
+            </button>
+          </div>
         </div>
 
         {/* Pricing Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 w-full">
           {tiers.map((tier, idx) => {
-            const price = billingPeriod === 'monthly' ? tier.monthlyPrice : tier.annualPrice;
-            const priceFormatted = price ? `₹${price.toLocaleString('en-IN')}` : tier.priceText;
-            const isCustom = !price;
+            const price = getTierPrice(tier.name, billingPeriod);
+            const currencySymbol = getCurrencySymbol();
+            let priceFormatted = tier.priceText;
+            if (price !== null) {
+              if (region === 'IN') {
+                priceFormatted = `${currencySymbol}${price.toLocaleString('en-IN')}`;
+              } else {
+                priceFormatted = `${currencySymbol}${price.toFixed(2)}`;
+              }
+            }
+            const isCustom = price === null;
 
             return (
               <div
