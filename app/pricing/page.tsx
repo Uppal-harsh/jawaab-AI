@@ -35,10 +35,37 @@ export default function PricingPage() {
     return () => clearInterval(interval);
   }, [showSignupModal, currentStep, resendTimer]);
 
+  const isBusinessEmail = (email: string): boolean => {
+    const freeDomains = [
+      'gmail.com',
+      'yahoo.com',
+      'yahoo.co.in',
+      'hotmail.com',
+      'outlook.com',
+      'icloud.com',
+      'aol.com',
+      'mail.com',
+      'protonmail.com',
+      'proton.me',
+      'yandex.com',
+      'gmx.com',
+      'gmx.net',
+      'live.com'
+    ];
+    const parts = email.split('@');
+    if (parts.length < 2) return false;
+    const domain = parts[1].toLowerCase().trim();
+    return !freeDomains.includes(domain);
+  };
+
   const handleStep1Email = (e: React.FormEvent) => {
     e.preventDefault();
     if (!emailInput || !emailInput.includes('@')) {
       setModalError('Please enter a valid email address.');
+      return;
+    }
+    if (!isBusinessEmail(emailInput)) {
+      setModalError('Please enter a business email address (free consumer domains like @gmail.com or @yahoo.com are not permitted).');
       return;
     }
     setModalError(null);
