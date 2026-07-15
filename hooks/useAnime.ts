@@ -49,8 +49,10 @@ export function useAnime<T extends HTMLElement | SVGElement>({ animation, runOnM
 
 // Utility to stagger text characters safely
 export function splitText(text: string): string {
-  // Use CSS opacity:1 fallback in global styles for reduced-motion users if JS disabled
-  return text.split('').map((char, index) => 
-    `<span class="inline-block anime-char" style="opacity:0">${char === ' ' ? '&nbsp;' : char}</span>`
-  ).join('');
+  return text.split(' ').map(word => {
+    const chars = word.split('').map(char => 
+      `<span class="inline-block anime-char" style="opacity:0">${char}</span>`
+    ).join('');
+    return `<span class="inline-block whitespace-nowrap">${chars}</span>`;
+  }).join(' ');
 }

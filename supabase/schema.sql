@@ -116,3 +116,22 @@ ALTER TABLE public.onboarding_preferences ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY admin_all_onboarding ON public.onboarding_preferences 
     FOR ALL USING (auth.role() = 'authenticated');
+
+-- 8. Phone Trials & OTP Verification Table
+CREATE TABLE IF NOT EXISTS public.phone_trials (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    phone_number TEXT NOT NULL UNIQUE,
+    trial_count INTEGER NOT NULL DEFAULT 0,
+    otp_code TEXT,
+    otp_attempts INTEGER NOT NULL DEFAULT 0,
+    otp_expires_at TIMESTAMP WITH TIME ZONE,
+    locked_until TIMESTAMP WITH TIME ZONE,
+    trial_expires_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+ALTER TABLE public.phone_trials ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY anonymous_all_trials ON public.phone_trials 
+    FOR ALL USING (true);

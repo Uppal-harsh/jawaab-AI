@@ -55,7 +55,7 @@ export default function LandingPage() {
         </div>
         
         <h1 
-          className="hero-heading text-5xl md:text-7xl font-semibold tracking-tighter text-balance mb-6"
+          className="hero-heading text-4xl sm:text-5xl md:text-7xl font-semibold tracking-tighter text-balance mb-6"
           dangerouslySetInnerHTML={{ __html: splitText('Automate Customer Chats & Bookings.') }}
         />
         

@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { MessageSquare, UserCheck, Calendar, TrendingUp, Loader2, ClipboardList } from 'lucide-react';
+import { MessageSquare, UserCheck, Calendar, TrendingUp, Loader2, ClipboardList, ShieldAlert, ArrowUpCircle, X, Sparkles, Check } from 'lucide-react';
+import { Button } from '../../components/ui/Button';
 
 interface DBLogItem {
   id: string;
@@ -29,6 +30,14 @@ export default function DashboardOverview() {
   const [calls, setCalls] = useState<DBLogItem[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Trial / Upsell states
+  const [trialActive, setTrialActive] = useState(false);
+  const [timeRemainingStr, setTimeRemainingStr] = useState('');
+  const [trialExpired, setTrialExpired] = useState(false);
+  const [showWarningBanner, setShowWarningBanner] = useState(false);
+  const [showUpsell, setShowUpsell] = useState(false);
+  const [dismissedUpsell, setDismissedUpsell] = useState(false);
+
   useEffect(() => {
     async function loadOverview() {
       try {
@@ -46,8 +55,59 @@ export default function DashboardOverview() {
     loadOverview();
   }, []);
 
+  // Timer calculation for 7-day trial limits
+  useEffect(() => {
+    const isTrial = localStorage.getItem('trial_active') === 'true';
+    const expiry = localStorage.getItem('trial_expiry');
+
+    if (isTrial && expiry) {
+      setTrialActive(true);
+
+      const checkTime = () => {
+        const diff = new Date(expiry).getTime() - Date.now();
+        if (diff <= 0) {
+          setTrialExpired(true);
+          setTimeRemainingStr('Expired');
+        } else {
+          const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+          const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+          const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+          setTimeRemainingStr(`${days}d ${hours}h ${mins}m`);
+
+          // Show Warning Banner if less than 24 hours remain
+          if (diff <= 24 * 60 * 60 * 1000) {
+            setShowWarningBanner(true);
+          }
+        }
+      };
+
+      checkTime();
+      const interval = setInterval(checkTime, 60000);
+      return () => clearInterval(interval);
+    }
+  }, []);
+
+  // Upsell trigger evaluation (on day 3 or if 20 leads captured)
+  useEffect(() => {
+    if (loading) return;
+    const expiry = localStorage.getItem('trial_expiry');
+    if (!expiry) return;
+
+    // Trigger logic
+    const totalLeads = calls.length;
+
+    // 3 days passed = 4 days or less remaining out of 7
+    const diff = new Date(expiry).getTime() - Date.now();
+    const fourDaysInMs = 4 * 24 * 60 * 60 * 1000;
+    const day3Passed = diff <= fourDaysInMs;
+
+    if ((totalLeads >= 20 || day3Passed) && !dismissedUpsell) {
+      setShowUpsell(true);
+    }
+  }, [loading, calls, dismissedUpsell]);
+
   // Compute live metrics
-  const totalCalls = calls.length; // Repurposed as total chats
+  const totalCalls = calls.length; 
   
   const leadsCaptured = calls.filter(
     (c) => c.call_summaries?.customer_name && c.call_summaries.customer_name.trim() !== ''
@@ -87,10 +147,52 @@ export default function DashboardOverview() {
     );
   }
 
+  // Lock App if trial is active and has expired
+  if (trialActive && trialExpired) {
+    return (
+      <div className="h-[70vh] flex flex-col items-center justify-center text-center p-6 space-y-6 animate-in fade-in duration-500">
+        <div className="w-16 h-16 bg-red-500/10 border border-red-500/20 text-red-400 rounded-full flex items-center justify-center">
+          <ShieldAlert className="w-8 h-8 animate-pulse" />
+        </div>
+        <div className="max-w-md space-y-2">
+          <h2 className="text-2xl font-bold font-syne text-white">Your Trial Ended</h2>
+          <p className="text-secondary text-xs">Your 7-day free trial has expired. Upgrade to Starter or Growth tier to restore automated WhatsApp CRM syncing and reactive customer logs.</p>
+        </div>
+        <div className="flex gap-3">
+          <Button onClick={() => router.push('/pricing')} className="font-bold">Upgrade Now</Button>
+          <Button variant="outline" onClick={() => window.location.href = 'mailto:sales@jawab.ai'} className="font-bold">Contact Sales</Button>
+        </div>
+      </div>
+    );
+  }
+
   const recentCalls = calls.slice(0, 3);
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      
+      {/* 1-Day Expiry Warning Banner */}
+      {showWarningBanner && (
+        <div className="p-4 bg-red-500/15 border border-red-500/20 text-red-400 text-xs rounded-xl flex items-center justify-between animate-in slide-in-from-top-2">
+          <div className="flex items-center gap-2">
+            <ShieldAlert className="w-4 h-4 shrink-0 animate-bounce" />
+            <span><strong>Urgent:</strong> Your free trial expires in {timeRemainingStr}. Upgrade to keep AI auto-replies active.</span>
+          </div>
+          <Button size="sm" className="h-7 text-[10px] font-bold" onClick={() => router.push('/pricing')}>Upgrade Plan</Button>
+        </div>
+      )}
+
+      {/* Standard Trial Active Header Info */}
+      {trialActive && !showWarningBanner && (
+        <div className="p-3 bg-accent/10 border border-accent/20 text-accent text-[11px] rounded-xl flex items-center justify-between">
+          <div className="flex items-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>Active Trial Session: <strong>{timeRemainingStr}</strong> remaining.</span>
+          </div>
+          <button onClick={() => router.push('/pricing')} className="text-xs font-bold hover:underline">Upgrade Plan</button>
+        </div>
+      )}
+
       <header>
         <h1 className="text-3xl font-semibold tracking-tight mb-1 text-white font-syne">Dashboard</h1>
         <p className="text-secondary text-sm">Welcome back. Here is what is happening with your WhatsApp automation & CRM today.</p>
@@ -122,7 +224,7 @@ export default function DashboardOverview() {
           <div className="h-48 flex items-end justify-between gap-4 px-2 md:px-6 border-b border-border pb-2">
             {leadStatuses.map((status) => {
               const count = statusCounts[status];
-              const heightPercent = (count / maxCount) * 80 + 10; // min 10% height for visual balance
+              const heightPercent = (count / maxCount) * 80 + 10; 
               return (
                 <div key={status} className="flex-1 flex flex-col items-center gap-2 group h-full justify-end">
                   <span className="text-xs font-bold text-accent group-hover:scale-110 transition-transform">
@@ -224,6 +326,63 @@ export default function DashboardOverview() {
           )}
         </div>
       </div>
+
+      {/* Dynamic Upsell Modal Prompt */}
+      {showUpsell && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="relative w-full max-w-md bg-surface border border-accent/30 rounded-2xl shadow-2xl p-6 flex flex-col text-center space-y-5 animate-in scale-in duration-300">
+            <button 
+              onClick={() => {
+                setShowUpsell(false);
+                setDismissedUpsell(true);
+              }}
+              className="absolute right-4 top-4 text-secondary hover:text-white p-1 rounded hover:bg-white/5 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="w-12 h-12 bg-accent/15 border border-accent/30 text-accent rounded-full flex items-center justify-center mx-auto">
+              <Sparkles className="w-6 h-6 animate-pulse" />
+            </div>
+
+            <div className="space-y-2">
+              <h3 className="text-lg font-bold text-white font-syne">Upgrade to Growth Tier</h3>
+              <p className="text-xs text-secondary leading-relaxed">
+                You've hit either your 3-day trial threshold or captured 20+ leads. Upgrade now to secure unlimited AI message responses, full CRM log tracking, and graphic metrics integrations.
+              </p>
+            </div>
+
+            <div className="bg-background border border-border p-3.5 rounded-xl text-left space-y-1.5 text-xs text-secondary">
+              <p className="flex items-center gap-2"><Check className="w-4 h-4 text-accent" /> Unlimited responses</p>
+              <p className="flex items-center gap-2"><Check className="w-4 h-4 text-accent" /> Multiple calendar & Sheets syncs</p>
+              <p className="flex items-center gap-2"><Check className="w-4 h-4 text-accent" /> Priority chat support & logs exports</p>
+            </div>
+
+            <div className="flex gap-3">
+              <Button 
+                onClick={() => {
+                  setShowUpsell(false);
+                  router.push('/pricing');
+                }} 
+                className="flex-1 justify-center font-bold"
+              >
+                Upgrade to Growth
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setShowUpsell(false);
+                  setDismissedUpsell(true);
+                }} 
+                className="flex-1 justify-center font-bold"
+              >
+                Maybe Later
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
