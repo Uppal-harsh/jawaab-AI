@@ -41,3 +41,36 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: 'Failed to retrieve call logs' }, { status: 500 });
   }
 }
+
+export async function POST(req: Request) {
+  if (!isAuthorized(req)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  try {
+    const { callId, leadStatus, appointmentDate, notes, callbackRequested } = await req.json();
+
+    if (!callId) {
+      return NextResponse.json({ error: 'Missing callId' }, { status: 400 });
+    }
+
+    const { data, error } = await supabaseAdmin
+      .from('call_summaries')
+      .update({
+        lead_status: leadStatus,
+        appointment_date: appointmentDate,
+        notes,
+        callback_requested: callbackRequested
+      })
+      .eq('call_id', callId)
+      .select('*');
+
+    if (error) throw error;
+
+    return NextResponse.json({ success: true, data });
+  } catch (error) {
+    console.error('[Calls API POST] Error updating lead details:', error);
+    return NextResponse.json({ error: 'Failed to update lead details' }, { status: 500 });
+  }
+}
+

@@ -40,9 +40,9 @@ export interface BusinessSettings {
   business_id: string;
   operating_hours: any;
   fallback_number?: string;
-  voice_gender: string;
+  voice_gender?: string;
   greeting_message: string;
-  telephony_provider: string;
+  telephony_provider?: string;
   answering_mode: string;
   language?: string;
 }

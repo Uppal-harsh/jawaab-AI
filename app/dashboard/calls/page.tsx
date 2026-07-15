@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { PhoneIncoming, Search, Filter, PlayCircle, MessageSquare, X, CheckCircle, Loader2 } from 'lucide-react';
+import { MessageSquare, Search, Edit2, Calendar, FileText, CheckCircle, X, Loader2, RefreshCw } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
 
 interface ChatLine {
@@ -25,15 +25,28 @@ interface DBLogItem {
     callback_requested: boolean;
     full_transcript: ChatLine[];
     whatsapp_sent_at: string | null;
+    lead_status: string;
+    appointment_date: string | null;
+    notes: string | null;
   } | null;
 }
 
-export default function CallLogs() {
+export default function CRMLeads() {
   const [calls, setCalls] = useState<DBLogItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // Modals / Editors
   const [activeTranscriptCall, setActiveTranscriptCall] = useState<DBLogItem | null>(null);
-  const [playingCallId, setPlayingCallId] = useState<string | null>(null);
+  const [activeEditLead, setActiveEditLead] = useState<DBLogItem | null>(null);
+  
+  // Edit Form Fields
+  const [editStatus, setEditStatus] = useState('New');
+  const [editAppointment, setEditAppointment] = useState('');
+  const [editNotes, setEditNotes] = useState('');
+  const [editCallback, setEditCallback] = useState(false);
+  const [saveLoading, setSaveLoading] = useState(false);
+
   const [alertMsg, setAlertMsg] = useState<string | null>(null);
 
   const fetchCalls = async () => {
@@ -54,32 +67,46 @@ export default function CallLogs() {
     fetchCalls();
   }, []);
 
-  const triggerPlayAudio = (call: DBLogItem) => {
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      setPlayingCallId(call.id);
-      
-      const transcript = call.call_summaries?.full_transcript || [];
-      const assistantGreeting = transcript.find(line => line.role === 'assistant')?.content 
-        || "Playing incoming call recording session.";
-        
-      const utterance = new SpeechSynthesisUtterance(assistantGreeting);
-      utterance.rate = 0.95;
-      utterance.onend = () => setPlayingCallId(null);
-      window.speechSynthesis.speak(utterance);
-      
-      const callerName = call.call_summaries?.customer_name || 'caller';
-      setAlertMsg(`Simulating call playback for ${callerName}...`);
-      setTimeout(() => setAlertMsg(null), 3000);
-    } else {
-      alert(`Audio playback simulated for number: ${call.caller_number}`);
-    }
+  const openEditModal = (call: DBLogItem) => {
+    setActiveEditLead(call);
+    setEditStatus(call.call_summaries?.lead_status || 'New');
+    setEditAppointment(call.call_summaries?.appointment_date || '');
+    setEditNotes(call.call_summaries?.notes || '');
+    setEditCallback(call.call_summaries?.callback_requested || false);
   };
 
-  const triggerWhatsAppAlert = (call: DBLogItem) => {
-    const callerName = call.call_summaries?.customer_name || 'New Lead';
-    setAlertMsg(`WhatsApp summary alert successfully dispatched to registered owner for ${callerName}.`);
-    setTimeout(() => setAlertMsg(null), 4000);
+  const handleSaveLeadDetails = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeEditLead) return;
+
+    setSaveLoading(true);
+    try {
+      const res = await fetch('/api/calls', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          callId: activeEditLead.id,
+          leadStatus: editStatus,
+          appointmentDate: editAppointment || null,
+          notes: editNotes || null,
+          callbackRequested: editCallback
+        })
+      });
+
+      if (res.ok) {
+        setAlertMsg(`CRM Lead details updated successfully for ${activeEditLead.call_summaries?.customer_name || 'Client'}.`);
+        setActiveEditLead(null);
+        await fetchCalls();
+        setTimeout(() => setAlertMsg(null), 3000);
+      } else {
+        alert('Failed to update lead details.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error occurred while updating lead details.');
+    } finally {
+      setSaveLoading(false);
+    }
   };
 
   // Filter logs by search query
@@ -95,7 +122,7 @@ export default function CallLogs() {
     return (
       <div className="h-[60vh] flex flex-col items-center justify-center text-secondary">
         <Loader2 className="w-8 h-8 animate-spin text-accent mb-4" />
-        <p className="text-sm">Retrieving real call logs...</p>
+        <p className="text-sm">Retrieving CRM leads & chats...</p>
       </div>
     );
   }
@@ -104,8 +131,8 @@ export default function CallLogs() {
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-border pb-6">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight mb-1 text-white font-syne">Call Logs</h1>
-          <p className="text-secondary text-sm">Review AI conversations and captured leads.</p>
+          <h1 className="text-3xl font-semibold tracking-tight mb-1 text-white font-syne">WhatsApp CRM Leads</h1>
+          <p className="text-secondary text-sm">Monitor WhatsApp chats, schedule appointments, and manage client files.</p>
         </div>
         
         <div className="flex items-center gap-3 w-full sm:w-auto">
@@ -113,19 +140,19 @@ export default function CallLogs() {
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-secondary" />
             <input 
               type="text" 
-              placeholder="Search phone number..." 
+              placeholder="Search by client name/phone..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full sm:w-64 bg-surface border border-border rounded-md pl-9 pr-3 py-2 text-sm focus:outline-none focus:border-accent text-white transition-colors"
             />
           </div>
           <Button variant="outline" size="md" className="gap-2 px-3 font-semibold" onClick={fetchCalls}>
-            Refresh
+            <RefreshCw className="w-3.5 h-3.5" /> Refresh
           </Button>
         </div>
       </header>
 
-      {/* Interactive Alert Banner */}
+      {/* Dynamic Action Alerts */}
       {alertMsg && (
         <div className="p-3 bg-accent/15 border border-accent/20 text-accent text-xs rounded-xl flex items-center justify-between animate-in slide-in-from-top-2">
           <div className="flex items-center gap-2">
@@ -138,34 +165,29 @@ export default function CallLogs() {
         </div>
       )}
 
+      {/* Main CRM Table */}
       <div className="bg-surface border border-border rounded-xl shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm whitespace-nowrap">
             <thead className="bg-background border-b border-border text-secondary">
               <tr>
-                <th className="px-6 py-4 font-medium uppercase tracking-wider text-xs">Caller Info</th>
-                <th className="px-6 py-4 font-medium uppercase tracking-wider text-xs">Summary</th>
-                <th className="px-6 py-4 font-medium uppercase tracking-wider text-xs">Duration & Time</th>
-                <th className="px-6 py-4 font-medium uppercase tracking-wider text-xs">Status</th>
-                <th className="px-6 py-4 font-medium uppercase tracking-wider text-xs text-right">Actions</th>
+                <th className="px-6 py-4 font-medium uppercase tracking-wider text-xs">Customer Details</th>
+                <th className="px-6 py-4 font-medium uppercase tracking-wider text-xs">AI Inquiry Summary</th>
+                <th className="px-6 py-4 font-medium uppercase tracking-wider text-xs">Appointment Info</th>
+                <th className="px-6 py-4 font-medium uppercase tracking-wider text-xs">Notes</th>
+                <th className="px-6 py-4 font-medium uppercase tracking-wider text-xs text-right">Lead Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {filteredCalls.length > 0 ? (
                 filteredCalls.map((call) => {
-                  const name = call.call_summaries?.customer_name || 'Unknown Caller';
-                  const reason = call.call_summaries?.reason_for_call || 'In conversation...';
+                  const name = call.call_summaries?.customer_name || 'Unknown Client';
+                  const reason = call.call_summaries?.reason_for_call || 'WhatsApp session active';
                   const isUrgent = call.call_summaries?.callback_requested || false;
+                  const leadStatus = call.call_summaries?.lead_status || 'New';
+                  const appointmentDate = call.call_summaries?.appointment_date || 'Not Scheduled';
+                  const notes = call.call_summaries?.notes || 'No internal notes';
                   
-                  // Format duration
-                  let durationStr = 'Ongoing';
-                  if (call.duration_seconds !== null && call.duration_seconds !== undefined) {
-                    const min = Math.floor(call.duration_seconds / 60);
-                    const sec = call.duration_seconds % 60;
-                    durationStr = `${min}m ${sec}s`;
-                  }
-                  
-                  // Format Time
                   const callDate = new Date(call.start_time);
                   const timeStr = callDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                   const dateStr = callDate.toLocaleDateString([], { month: 'short', day: 'numeric' });
@@ -175,7 +197,7 @@ export default function CallLogs() {
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <div className="w-9 h-9 rounded-full bg-background border border-border flex items-center justify-center text-secondary">
-                            <PhoneIncoming className="w-4 h-4" />
+                            <MessageSquare className="w-4 h-4 text-[#25D366]" />
                           </div>
                           <div>
                             <p className="font-medium text-primary">{name}</p>
@@ -183,49 +205,54 @@ export default function CallLogs() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 max-w-[200px] truncate text-secondary">
-                        {reason}
-                      </td>
-                      <td className="px-6 py-4 text-secondary">
-                        <p className="text-primary">{durationStr}</p>
+                      <td className="px-6 py-4 max-w-[220px] truncate text-secondary">
+                        <p className="text-primary truncate">{reason}</p>
                         <p className="text-xs">{dateStr} at {timeStr}</p>
                       </td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
-                          isUrgent ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 'bg-background border border-border text-secondary'
-                        }`}>
-                          {isUrgent && <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>}
-                          {isUrgent ? 'Callback Requested' : 'Resolved'}
-                        </span>
+                      <td className="px-6 py-4 text-secondary">
+                        <div className="flex items-center gap-1.5 text-xs text-accent">
+                          <Calendar className="w-3.5 h-3.5 text-accent" />
+                          <span>{appointmentDate}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 max-w-[200px] truncate text-xs text-secondary italic">
+                        {notes}
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className={`w-8 h-8 p-0 ${playingCallId === call.id ? 'text-accent' : 'text-secondary hover:text-white'}`}
-                            title="Play Recording"
-                            onClick={() => triggerPlayAudio(call)}
-                          >
-                            <PlayCircle className="w-4 h-4" />
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="w-8 h-8 p-0 text-secondary hover:text-white" 
-                            title="View Transcript"
-                            onClick={() => setActiveTranscriptCall(call)}
-                          >
-                            <MessageSquare className="w-4 h-4" />
-                          </Button>
-                          <Button 
-                            variant="secondary" 
-                            size="sm" 
-                            className="h-8 text-xs bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366]/20 border-none font-bold"
-                            onClick={() => triggerWhatsAppAlert(call)}
-                          >
-                            WhatsApp
-                          </Button>
+                        <div className="flex items-center justify-end gap-3">
+                          <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold border ${
+                            leadStatus === 'Appointment Booked' 
+                              ? 'bg-green-500/10 text-green-400 border-green-500/20'
+                              : leadStatus === 'Contacted'
+                              ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                              : leadStatus === 'Closed'
+                              ? 'bg-background border-border text-secondary'
+                              : 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20'
+                          }`}>
+                            {isUrgent && <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse mr-1"></span>}
+                            {leadStatus}
+                          </span>
+
+                          <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="w-8 h-8 p-0 text-secondary hover:text-white" 
+                              title="Edit Lead Details"
+                              onClick={() => openEditModal(call)}
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="w-8 h-8 p-0 text-secondary hover:text-white" 
+                              title="View WhatsApp Chat Transcript"
+                              onClick={() => setActiveTranscriptCall(call)}
+                            >
+                              <FileText className="w-4 h-4" />
+                            </Button>
+                          </div>
                         </div>
                       </td>
                     </tr>
@@ -234,7 +261,7 @@ export default function CallLogs() {
               ) : (
                 <tr>
                   <td colSpan={5} className="px-6 py-12 text-center text-xs text-secondary">
-                    No live database call logs found. Secure your Exotel line to receive incoming signals.
+                    No CRM leads logged. Connect your Meta WhatsApp webhook to capture automated customer interactions.
                   </td>
                 </tr>
               )}
@@ -243,13 +270,94 @@ export default function CallLogs() {
         </div>
       </div>
 
-      {/* Transcript Modal */}
+      {/* Edit CRM Lead Modal */}
+      {activeEditLead && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <form onSubmit={handleSaveLeadDetails} className="relative w-full max-w-md bg-surface border border-border rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-in scale-in duration-300">
+            <header className="px-6 py-4 border-b border-border flex items-center justify-between bg-background">
+              <div>
+                <h3 className="font-semibold text-white font-syne">Edit CRM Lead Stage</h3>
+                <p className="text-xs text-secondary font-mono">
+                  {activeEditLead.call_summaries?.customer_name || 'Client'} ({activeEditLead.caller_number})
+                </p>
+              </div>
+              <button 
+                type="button"
+                onClick={() => setActiveEditLead(null)}
+                className="text-secondary hover:text-white p-1 rounded hover:bg-white/5 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </header>
+
+            <div className="p-6 space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-secondary uppercase">Lead Status</label>
+                <select 
+                  value={editStatus}
+                  onChange={(e) => setEditStatus(e.target.value)}
+                  className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:border-accent text-white"
+                >
+                  <option value="New">New Lead</option>
+                  <option value="Contacted">Contacted / Open</option>
+                  <option value="Appointment Booked">Appointment Booked</option>
+                  <option value="Closed">Closed / Completed</option>
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-secondary uppercase">Schedule Appointment Date & Time</label>
+                <input 
+                  type="text" 
+                  value={editAppointment}
+                  onChange={(e) => setEditAppointment(e.target.value)}
+                  placeholder="e.g. tomorrow at 3:00 PM"
+                  className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:border-accent text-white"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-secondary uppercase">Internal Notes</label>
+                <textarea 
+                  rows={3}
+                  value={editNotes}
+                  onChange={(e) => setEditNotes(e.target.value)}
+                  placeholder="Inquire client details, symptoms, pricing discussed..."
+                  className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:border-accent text-white resize-none"
+                />
+              </div>
+
+              <div className="flex items-center gap-2 pt-2">
+                <input 
+                  type="checkbox" 
+                  id="callback_requested"
+                  checked={editCallback}
+                  onChange={(e) => setEditCallback(e.target.checked)}
+                  className="w-4 h-4 bg-background border-border rounded text-accent focus:ring-0 focus:ring-offset-0"
+                />
+                <label htmlFor="callback_requested" className="text-xs font-medium text-secondary cursor-pointer">
+                  Requires Manual Follow-up / Callback Alert
+                </label>
+              </div>
+            </div>
+
+            <footer className="px-6 py-4 border-t border-border bg-background flex justify-end gap-2">
+              <Button type="button" variant="ghost" size="sm" onClick={() => setActiveEditLead(null)}>Cancel</Button>
+              <Button type="submit" size="sm" className="font-bold" disabled={saveLoading}>
+                {saveLoading ? 'Saving...' : 'Save Lead Details'}
+              </Button>
+            </footer>
+          </form>
+        </div>
+      )}
+
+      {/* Chat Transcript Modal */}
       {activeTranscriptCall && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="relative w-full max-w-lg bg-surface border border-border rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh] animate-in scale-in duration-300">
             <header className="px-6 py-4 border-b border-border flex items-center justify-between bg-background">
               <div>
-                <h3 className="font-semibold text-white font-syne">Voice Conversation Log</h3>
+                <h3 className="font-semibold text-white font-syne">WhatsApp Conversation Transcript</h3>
                 <p className="text-xs text-secondary font-mono">
                   {activeTranscriptCall.call_summaries?.customer_name || 'Unknown'} ({activeTranscriptCall.caller_number})
                 </p>
@@ -262,7 +370,7 @@ export default function CallLogs() {
               </button>
             </header>
 
-            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+            <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-background/50">
               {activeTranscriptCall.call_summaries?.full_transcript && 
               activeTranscriptCall.call_summaries.full_transcript.length > 0 ? (
                 activeTranscriptCall.call_summaries.full_transcript.map((line, idx) => (
@@ -271,17 +379,17 @@ export default function CallLogs() {
                     className={`flex flex-col max-w-[80%] p-3 rounded-lg text-xs leading-relaxed ${
                       line.role === 'user'
                         ? 'bg-[#222] text-secondary self-start'
-                        : 'bg-accent/10 text-accent self-end border border-accent/10'
+                        : 'bg-[#075e54] text-white self-end border border-[#075e54]'
                     }`}
                   >
-                    <span className="font-bold text-[9px] uppercase tracking-wider mb-1 text-white">
-                      {line.role === 'user' ? 'Caller' : 'Jawaab AI'}
+                    <span className="font-bold text-[9px] uppercase tracking-wider mb-1 text-white opacity-70">
+                      {line.role === 'user' ? 'Client (WhatsApp)' : 'Jawaab AI Agent'}
                     </span>
                     {line.content}
                   </div>
                 ))
               ) : (
-                <p className="text-xs text-secondary text-center py-4">No transcript items logged for this session.</p>
+                <p className="text-xs text-secondary text-center py-4">No WhatsApp messages recorded in this chat session.</p>
               )}
             </div>
 

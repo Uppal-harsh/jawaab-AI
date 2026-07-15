@@ -1,4 +1,4 @@
--- Supabase Database Schema for Jawaab AI
+-- Supabase Database Schema for Jawaab AI WhatsApp CRM & Automation
 
 -- 1. Businesses Table
 CREATE TABLE IF NOT EXISTS public.businesses (
@@ -16,9 +16,7 @@ CREATE TABLE IF NOT EXISTS public.business_settings (
     business_id UUID NOT NULL REFERENCES public.businesses(id) ON DELETE CASCADE UNIQUE,
     operating_hours JSONB NOT NULL DEFAULT '{}'::jsonb,
     fallback_number TEXT,
-    voice_gender TEXT NOT NULL DEFAULT 'female',
     greeting_message TEXT NOT NULL,
-    telephony_provider TEXT NOT NULL DEFAULT 'exotel', -- 'exotel' or 'twilio'
     answering_mode TEXT NOT NULL DEFAULT 'always_answer' -- 'always_answer' or 'forwarded_only'
 );
 
@@ -33,28 +31,31 @@ CREATE TABLE IF NOT EXISTS public.knowledge_cards (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- 4. Calls Table
+-- 4. Chats (WhatsApp Sessions) Table
 CREATE TABLE IF NOT EXISTS public.calls (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     business_id UUID NOT NULL REFERENCES public.businesses(id) ON DELETE CASCADE,
-    telephony_call_id TEXT NOT NULL UNIQUE,
-    caller_number TEXT NOT NULL,
+    telephony_call_id TEXT NOT NULL UNIQUE, -- repurposed for WhatsApp message/chat session ID
+    caller_number TEXT NOT NULL,          -- customer WhatsApp number
     start_time TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     end_time TIMESTAMP WITH TIME ZONE,
-    duration_seconds INTEGER,
-    recording_url TEXT
+    duration_seconds INTEGER,             -- unused/null
+    recording_url TEXT                    -- unused/null
 );
 
--- 5. Call Summaries Table
+-- 5. CRM Leads / Chat Summaries Table
 CREATE TABLE IF NOT EXISTS public.call_summaries (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     call_id UUID NOT NULL REFERENCES public.calls(id) ON DELETE CASCADE UNIQUE,
     customer_name TEXT,
     customer_phone TEXT NOT NULL,
-    reason_for_call TEXT NOT NULL,
-    callback_requested BOOLEAN NOT NULL DEFAULT false,
+    reason_for_call TEXT NOT NULL,        -- Reason for inquiry / chat
+    callback_requested BOOLEAN NOT NULL DEFAULT false, -- Follow up / human requested
     full_transcript JSONB NOT NULL DEFAULT '[]'::jsonb,
-    whatsapp_sent_at TIMESTAMP WITH TIME ZONE
+    whatsapp_sent_at TIMESTAMP WITH TIME ZONE,
+    lead_status TEXT NOT NULL DEFAULT 'New', -- 'New', 'Contacted', 'Appointment Booked', 'Closed'
+    appointment_date TEXT,                -- Scheduled appointment date/time
+    notes TEXT                            -- Owner internal notes
 );
 
 -- 6. Prompt Configurations Table
@@ -82,10 +83,6 @@ ALTER TABLE public.calls ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.call_summaries ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.prompt_configurations ENABLE ROW LEVEL SECURITY;
 
--- Note: Because this is a single-administrator MVP app, all authenticated dashboard users
--- have global control or belong to the only admin context. 
--- Policies below verify that the user is authenticated.
-
 CREATE POLICY admin_all_businesses ON public.businesses 
     FOR ALL USING (auth.role() = 'authenticated');
 
@@ -109,7 +106,7 @@ CREATE TABLE IF NOT EXISTS public.onboarding_preferences (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID,
     business_type TEXT NOT NULL,
-    missed_calls_per_day TEXT NOT NULL,
+    missed_calls_per_day TEXT NOT NULL,   -- Repurposed / customer inquiries per day
     current_receptionist_method TEXT NOT NULL,
     primary_goal TEXT NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL

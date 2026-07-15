@@ -42,9 +42,7 @@ export class ConversationEngine {
       id: '',
       business_id: businessId,
       operating_hours: {},
-      voice_gender: 'female',
-      greeting_message: `Hello. Welcome to ${business?.name || 'our clinic'}. How can we help you?`,
-      telephony_provider: 'exotel',
+      greeting_message: `Hello. Welcome to ${business?.name || 'our business'}. How can we help you?`,
       answering_mode: 'always_answer',
       language: 'auto'
     };
@@ -88,7 +86,7 @@ export class ConversationEngine {
     const summaryPrompt: ChatMessage[] = [
       {
         role: 'system',
-        content: 'You are an analytics compiler. Summarize this telephone conversation transcript between a voice assistant and a caller in exactly two sentences.',
+        content: 'You are an analytics compiler. Summarize this WhatsApp conversation transcript between an assistant and a customer in exactly two sentences.',
         timestamp: new Date().toISOString(),
       },
       {
@@ -103,7 +101,7 @@ export class ConversationEngine {
       return response.content;
     } catch (e) {
       console.warn('[ConversationEngine] Failed to summarize conversation session:', e);
-      return 'Call summary generation failed.';
+      return 'Chat summary generation failed.';
     }
   }
 }

@@ -26,7 +26,7 @@ export class FlowOrchestrator {
 
     // Wire up Event Bus listeners for decoupled operations
     eventBus.subscribe('speech_input', (e) => {
-      console.log(`[Event: Speech Input] CallSid: ${e.callSid}, Query: "${e.payload.query}"`);
+      console.log(`[Event: Message Input] ChatSid: ${e.callSid}, Query: "${e.payload.query}"`);
     });
 
     eventBus.subscribe('llm_end', (e) => {
@@ -41,7 +41,7 @@ export class FlowOrchestrator {
     });
 
     eventBus.subscribe('action_execute', (e) => {
-      console.log(`[Event: Action Triggered] CallSid: ${e.callSid}, Intent: ${e.payload.intentType}`);
+      console.log(`[Event: Action Triggered] ChatSid: ${e.callSid}, Intent: ${e.payload.intentType}`);
     });
   }
 
@@ -52,7 +52,7 @@ export class FlowOrchestrator {
   ): Promise<string> {
     const turnTimestamp = new Date().toISOString();
 
-    // 1. Publish speech input event
+    // 1. Publish message input event
     eventBus.publish({
       id: Math.random().toString(),
       callSid,
@@ -83,7 +83,7 @@ export class FlowOrchestrator {
       callSid,
       type: 'llm_start',
       timestamp: new Date().toISOString(),
-      payload: { model: settings.voice_gender === 'female' ? 'Aditi' : 'Raveena' },
+      payload: { model: 'OpenRouter-Default' },
     });
 
     const response = await this.engine.generateResponse(updatedHistory, systemPrompt);

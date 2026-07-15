@@ -16,7 +16,7 @@ export interface BusinessSettings {
     [key: string]: { open: string; close: string; closed: boolean };
   };
   fallback_number: string | null;
-  voice_gender: 'male' | 'female';
+  voice_gender?: 'male' | 'female';
   greeting_message: string;
 }
 
@@ -56,6 +56,9 @@ export interface CallSummary {
   callback_requested: boolean;
   full_transcript: ChatMessage[];
   whatsapp_sent_at: string | null;
+  lead_status?: string;
+  appointment_date?: string | null;
+  notes?: string | null;
 }
 
 export interface PromptConfiguration {

@@ -14,26 +14,26 @@ export default function DemoPage() {
   // Workflow steps detailing how Jawaab AI works
   const demoSteps = [
     {
-      title: '1. Missed Call Forwarding',
-      description: 'A customer dials your business number. If you are busy, reject the call, or are out of coverage, your carrier automatically routes the call to your Jawaab AI virtual SIP channel.',
+      title: '1. WhatsApp Initialization',
+      description: 'A customer messages your WhatsApp business number. The Jawaab AI webhook intercepts the message and processes it instantly.',
       icon: <PhoneCall className="w-5 h-5 text-accent" />,
       time: '0:05'
     },
     {
-      title: '2. Conversational Answering',
-      description: 'The AI answers instantly with a friendly native greeting (English, Hindi, or Hinglish). No buttons to press, no delay—just natural speech.',
+      title: '2. Chat Automation',
+      description: 'The AI responds within seconds using natural Hinglish, Hindi, or English. It converses with the client exactly like a human representative.',
       icon: <Sparkles className="w-5 h-5 text-accent" />,
       time: '0:15'
     },
     {
       title: '3. Knowledge Card Extraction',
-      description: 'When the caller asks about pricing, consultation fees, or timings, the AI instantly retrieves information from your custom knowledge cards to answer without hallucinations.',
+      description: 'When the customer asks about pricing, timings, or location, the AI pulls the exact answers from your pre-configured Knowledge Cards to avoid hallucinations.',
       icon: <CheckCircle2 className="w-5 h-5 text-accent" />,
       time: '0:35'
     },
     {
-      title: '4. Summary Dispatch',
-      description: 'Immediately after the call ends, Jawaab AI compiles caller names, requested callbacks, intent, and summary details into a WhatsApp message and dispatches it directly to you.',
+      title: '4. CRM Logging & Booking',
+      description: 'The AI books appointments, classifies lead urgency, and automatically creates or updates CRM client records for your team.',
       icon: <MessageSquare className="w-5 h-5 text-[#25D366]" />,
       time: '0:50'
     }
@@ -57,7 +57,7 @@ export default function DemoPage() {
             Watch Jawaab AI in Action.
           </h1>
           <p className="text-secondary text-sm md:text-base text-balance max-w-xl mx-auto">
-            See how the voice receptionist operates in real-time, handles Hinglish calls, and forwards lead alerts directly to your WhatsApp.
+            See how the WhatsApp chat assistant operates in real-time, schedules bookings, and automates customer leads CRM.
           </p>
         </div>
 
@@ -98,41 +98,41 @@ export default function DemoPage() {
                 <div className="absolute inset-0 z-0 bg-gradient-to-br from-[#1b1b1b] to-[#121212] flex flex-col justify-between p-6">
                   {/* Mock Top Info */}
                   <div className="flex justify-between items-center text-xs text-secondary">
-                    <span>Jawaab AI Receptionist Walkthrough</span>
-                    <span>1:00 min</span>
-                  </div>
-                  {/* Mock Center Wave animation */}
-                  <div className="flex justify-center items-end gap-1.5 h-16">
-                    {[1.2, 0.8, 1.5, 0.9, 1.3, 0.7, 1.1].map((scale, i) => (
-                      <div key={i} className="w-1.5 bg-accent/35 rounded-full h-full origin-bottom" style={{ transform: `scaleY(${scale})` }}></div>
-                    ))}
-                  </div>
-                  {/* Mock Controls bar */}
-                  <div className="flex justify-between items-center border-t border-border pt-4 text-secondary">
-                    <div className="flex items-center gap-4">
-                      <Play className="w-4 h-4 cursor-pointer hover:text-white" />
-                      <Volume2 className="w-4 h-4 cursor-pointer hover:text-white" />
-                      <span className="text-[10px]">00:00 / 01:00</span>
-                    </div>
-                    <Maximize className="w-4 h-4 cursor-pointer hover:text-white" />
-                  </div>
+                  <span>Jawaab AI WhatsApp Automation Walkthrough</span>
+                  <span>1:00 min</span>
                 </div>
-              )}
-
-            </div>
-
-            {/* Quick Summary Card */}
-            <div className="bg-surface/50 border border-border p-5 rounded-2xl flex items-center gap-4 cursor-pointer hover:border-accent/30 transition-colors" onClick={() => router.push('/login?mode=signup')}>
-              <div className="p-3 bg-accent/15 text-accent rounded-xl">
-                <Smartphone className="w-6 h-6" />
+                {/* Mock Center Wave animation */}
+                <div className="flex justify-center items-end gap-1.5 h-16">
+                  {[1.2, 0.8, 1.5, 0.9, 1.3, 0.7, 1.1].map((scale, i) => (
+                    <div key={i} className="w-1.5 bg-[#25D366]/35 rounded-full h-full origin-bottom" style={{ transform: `scaleY(${scale})` }}></div>
+                  ))}
+                </div>
+                {/* Mock Controls bar */}
+                <div className="flex justify-between items-center border-t border-border pt-4 text-secondary">
+                  <div className="flex items-center gap-4">
+                    <Play className="w-4 h-4 cursor-pointer hover:text-white" />
+                    <Volume2 className="w-4 h-4 cursor-pointer hover:text-white" />
+                    <span className="text-[10px]">00:00 / 01:00</span>
+                  </div>
+                  <Maximize className="w-4 h-4 cursor-pointer hover:text-white" />
+                </div>
               </div>
-              <div>
-                <h4 className="text-sm font-semibold text-white">Interactive Call Testing</h4>
-                <p className="text-xs text-secondary mt-1">
-                  Want to try dialing Jawaab AI live? Click here to register and trigger a mock call directly to your admin console.
-                </p>
-              </div>
+            )}
+
+          </div>
+
+          {/* Quick Summary Card */}
+          <div className="bg-surface/50 border border-border p-5 rounded-2xl flex items-center gap-4 cursor-pointer hover:border-accent/30 transition-colors" onClick={() => router.push('/login?mode=signup')}>
+            <div className="p-3 bg-accent/15 text-accent rounded-xl">
+              <Smartphone className="w-6 h-6" />
             </div>
+            <div>
+              <h4 className="text-sm font-semibold text-white">Interactive Chat Testing</h4>
+              <p className="text-xs text-secondary mt-1">
+                Want to try messaging Jawaab AI live? Click here to register and test the chat flow configuration in real-time.
+              </p>
+            </div>
+          </div>
           </div>
 
           {/* Timestamp Walkthrough Timeline (2/5 columns) */}

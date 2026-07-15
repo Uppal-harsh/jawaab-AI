@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { PhoneIncoming, UserCheck, Clock, TrendingUp, Loader2 } from 'lucide-react';
+import { MessageSquare, UserCheck, Calendar, TrendingUp, Loader2, PhoneIncoming } from 'lucide-react';
 
 interface DBLogItem {
   id: string;
@@ -18,6 +18,9 @@ interface DBLogItem {
     reason_for_call: string;
     callback_requested: boolean;
     whatsapp_sent_at: string | null;
+    lead_status: string;
+    appointment_date: string | null;
+    notes: string | null;
   } | null;
 }
 
@@ -44,31 +47,26 @@ export default function DashboardOverview() {
   }, []);
 
   // Compute live metrics
-  const totalCalls = calls.length;
+  const totalCalls = calls.length; // Repurposed as total chats
   
   const leadsCaptured = calls.filter(
     (c) => c.call_summaries?.customer_name && c.call_summaries.customer_name.trim() !== ''
   ).length;
 
-  const validDurations = calls.filter((c) => c.duration_seconds !== null) as { duration_seconds: number }[];
-  const avgDurationSeconds = validDurations.length > 0 
-    ? Math.round(validDurations.reduce((sum, c) => sum + c.duration_seconds, 0) / validDurations.length)
-    : 0;
-  
-  const avgDurationStr = avgDurationSeconds > 0
-    ? `${Math.floor(avgDurationSeconds / 60)}m ${avgDurationSeconds % 60}s`
-    : '0s';
+  const bookedAppointmentsCount = calls.filter(
+    (c) => c.call_summaries?.lead_status === 'Appointment Booked'
+  ).length;
 
   const callbackRequests = calls.filter((c) => c.call_summaries?.callback_requested).length;
-  const recoveryRateStr = totalCalls > 0
+  const resolutionRateStr = totalCalls > 0
     ? `${Math.round(((totalCalls - callbackRequests) / totalCalls) * 100)}%`
     : '100%';
 
   const stats = [
-    { label: 'Total Calls Logged', value: String(totalCalls), change: 'Live', icon: <PhoneIncoming className="w-5 h-5" /> },
-    { label: 'Leads Captured', value: String(leadsCaptured), change: 'Database', icon: <UserCheck className="w-5 h-5" /> },
-    { label: 'Avg Duration', value: avgDurationStr, change: 'Dynamic', icon: <Clock className="w-5 h-5" /> },
-    { label: 'Resolution Rate', value: recoveryRateStr, change: 'Optimal', icon: <TrendingUp className="w-5 h-5" /> },
+    { label: 'WhatsApp Chats', value: String(totalCalls), change: 'Live', icon: <MessageSquare className="w-5 h-5" /> },
+    { label: 'CRM Leads', value: String(leadsCaptured), change: 'Database', icon: <UserCheck className="w-5 h-5" /> },
+    { label: 'Booked Appointments', value: String(bookedAppointmentsCount), change: 'Active', icon: <Calendar className="w-5 h-5" /> },
+    { label: 'Resolution Rate', value: resolutionRateStr, change: 'Optimal', icon: <TrendingUp className="w-5 h-5" /> },
   ];
 
   if (loading) {
@@ -86,7 +84,7 @@ export default function DashboardOverview() {
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <header>
         <h1 className="text-3xl font-semibold tracking-tight mb-1 text-white font-syne">Dashboard</h1>
-        <p className="text-secondary text-sm">Welcome back. Here is what is happening with your reception today.</p>
+        <p className="text-secondary text-sm">Welcome back. Here is what is happening with your WhatsApp automation & CRM today.</p>
       </header>
 
       {/* Stats Grid */}
@@ -107,20 +105,21 @@ export default function DashboardOverview() {
         ))}
       </div>
 
-      {/* Recent Calls Minimal View */}
+      {/* Recent CRM Activity View */}
       <div className="bg-surface border border-border rounded-xl shadow-sm overflow-hidden mt-8">
         <div className="px-6 py-5 border-b border-border flex justify-between items-center">
-          <h2 className="font-semibold text-primary">Recent Call Activity</h2>
-          <button onClick={() => router.push('/dashboard/calls')} className="text-xs font-medium text-accent hover:underline">View All</button>
+          <h2 className="font-semibold text-primary">Recent CRM Activity</h2>
+          <button onClick={() => router.push('/dashboard/calls')} className="text-xs font-medium text-accent hover:underline">View All Leads</button>
         </div>
         
         <div className="divide-y divide-border">
           {recentCalls.length > 0 ? (
             recentCalls.map((call) => {
-              const name = call.call_summaries?.customer_name || 'Unknown Caller';
+              const name = call.call_summaries?.customer_name || 'Unknown Client';
               const phone = call.caller_number;
               const reason = call.call_summaries?.reason_for_call || 'In conversation...';
               const actionRequired = call.call_summaries?.callback_requested || false;
+              const leadStatus = call.call_summaries?.lead_status || 'New';
               
               const callDate = new Date(call.start_time);
               const timeStr = callDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -129,7 +128,7 @@ export default function DashboardOverview() {
                 <div key={call.id} className="px-6 py-4 flex items-center justify-between hover:bg-white/5 transition-colors">
                   <div className="flex items-center gap-4">
                     <div className="w-10 h-10 rounded-full bg-background border border-border flex items-center justify-center">
-                      <PhoneIncoming className="w-4 h-4 text-secondary" />
+                      <MessageSquare className="w-4 h-4 text-secondary" />
                     </div>
                     <div>
                       <p className="text-sm font-medium text-primary mb-0.5">{name}</p>
@@ -141,10 +140,10 @@ export default function DashboardOverview() {
                     {actionRequired ? (
                       <div className="flex items-center justify-end gap-1.5 text-xs text-red-400">
                         <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
-                        <span>Callback Req</span>
+                        <span>Follow-up Req</span>
                       </div>
                     ) : (
-                      <span className="text-[10px] text-secondary font-semibold uppercase tracking-wider">Resolved</span>
+                      <span className="text-[10px] text-green-400 font-semibold uppercase tracking-wider">{leadStatus}</span>
                     )}
                   </div>
                 </div>
@@ -152,7 +151,7 @@ export default function DashboardOverview() {
             })
           ) : (
             <div className="px-6 py-12 text-center text-xs text-secondary">
-              No recent calls logged. Connect your Exotel webhook to forward live traffic.
+              No recent WhatsApp chats logged. Configure your Meta Webhook to receive live automation inquiries.
             </div>
           )}
         </div>

@@ -4,10 +4,6 @@ export interface ILLMProvider {
   generateText(messages: ChatMessage[], options?: LLMOptions): Promise<LLMResponse>;
 }
 
-export interface IVoiceProvider {
-  createResponseXML(text: string, voice: string, language: string, redirectUrl: string): string;
-  createErrorXML(voice: string, language: string): string;
-}
 
 export interface IStorageProvider {
   getCallSession(callSid: string): Promise<any>;

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Button } from '../../../components/ui/Button';
-import { Save, Plus, Trash2, Loader2 } from 'lucide-react';
+import { Save, Plus, Trash2, Loader2, MessageSquare, Shield } from 'lucide-react';
 
 interface KnowledgeCard {
   id?: string;
@@ -16,11 +16,8 @@ export default function BusinessProfile() {
   const [name, setName] = useState('SmileCare Dental');
   const [ownerName, setOwnerName] = useState('Dr. Sharma');
   const [phone, setPhone] = useState('+91 98765 43210');
-  const [greeting, setGreeting] = useState('Namaste. Welcome to SmileCare Dental. How can we help you smile today?');
-  const [voiceGender, setVoiceGender] = useState<'male' | 'female'>('female');
-  const [language, setLanguage] = useState('auto');
+  const [greeting, setGreeting] = useState('Hello! Welcome to SmileCare Dental. How can we help you today?');
   const [whatsappNumber, setWhatsappNumber] = useState('+91 98765 43210');
-  const [telephonyProvider, setTelephonyProvider] = useState<'exotel' | 'twilio'>('exotel');
   const [answeringMode, setAnsweringMode] = useState<'always_answer' | 'forwarded_only'>('always_answer');
 
   // UI state feedback
@@ -52,8 +49,6 @@ export default function BusinessProfile() {
           }
           if (settings) {
             setGreeting(settings.greeting_message || '');
-            setVoiceGender(settings.voice_gender || 'female');
-            setTelephonyProvider(settings.telephony_provider || 'exotel');
             setAnsweringMode(settings.answering_mode || 'always_answer');
           }
         }
@@ -86,7 +81,7 @@ export default function BusinessProfile() {
     setLoading(true);
     setStatusMsg(null);
 
-    // Prepare matching payload schema
+    // Prepare matching payload schema (without voice settings to match modified DB/API)
     const payload = {
       name,
       owner_name: ownerName,
@@ -102,9 +97,7 @@ export default function BusinessProfile() {
         sunday: { open: '00:00', close: '00:00', closed: true },
       },
       fallback_number: phone,
-      voice_gender: voiceGender,
       greeting_message: greeting,
-      telephony_provider: telephonyProvider,
       answering_mode: answeringMode,
     };
 
@@ -190,8 +183,8 @@ export default function BusinessProfile() {
     <form className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700" onSubmit={handleSaveProfile}>
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight mb-1">Business Profile</h1>
-          <p className="text-secondary text-sm">Configure how the AI receptionist represents your company.</p>
+          <h1 className="text-3xl font-semibold tracking-tight mb-1 font-syne text-white">Business Profile</h1>
+          <p className="text-secondary text-sm">Configure how the AI WhatsApp automation represents your company.</p>
         </div>
         <Button type="submit" className="gap-2 font-bold" disabled={loading}>
           {loading ? (
@@ -217,7 +210,7 @@ export default function BusinessProfile() {
         {/* Main Settings */}
         <div className="lg:col-span-2 space-y-6">
           <div className="bg-surface border border-border rounded-xl p-6 shadow-sm">
-            <h2 className="text-lg font-medium mb-4 border-b border-border pb-4 text-white">General Information</h2>
+            <h2 className="text-lg font-medium mb-4 border-b border-border pb-4 text-white font-syne">General Information</h2>
             <div className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
@@ -243,7 +236,7 @@ export default function BusinessProfile() {
               </div>
               
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-secondary uppercase tracking-wider">Phone Number (SIP Caller ID)</label>
+                <label className="text-xs font-semibold text-secondary uppercase tracking-wider">Business Phone Number</label>
                 <input 
                   type="tel" 
                   value={phone} 
@@ -254,7 +247,7 @@ export default function BusinessProfile() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-secondary uppercase tracking-wider">AI Greeting Message</label>
+                <label className="text-xs font-semibold text-secondary uppercase tracking-wider">AI Greeting Message (Sent to clients when they text)</label>
                 <textarea 
                   rows={2} 
                   value={greeting} 
@@ -269,7 +262,7 @@ export default function BusinessProfile() {
           {/* Knowledge Cards */}
           <div className="bg-surface border border-border rounded-xl p-6 shadow-sm">
             <div className="flex justify-between items-center border-b border-border pb-4 mb-4">
-              <h2 className="text-lg font-medium text-white">Knowledge Base FAQs</h2>
+              <h2 className="text-lg font-medium text-white font-syne">Knowledge Base FAQs</h2>
               <Button 
                 type="button" 
                 size="sm" 
@@ -360,64 +353,22 @@ export default function BusinessProfile() {
         {/* Sidebar Settings */}
         <div className="space-y-6">
           <div className="bg-surface border border-border rounded-xl p-6 shadow-sm">
-            <h2 className="text-lg font-medium mb-4 border-b border-border pb-4 text-white">Voice Settings</h2>
-            
+            <h2 className="text-lg font-medium mb-4 border-b border-border pb-4 text-white font-syne">WhatsApp Automation Mode</h2>
             <div className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-secondary uppercase tracking-wider">Receptionist Voice</label>
-                <select 
-                  value={voiceGender}
-                  onChange={(e) => setVoiceGender(e.target.value as any)}
-                  className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:border-accent text-white transition-colors"
-                >
-                  <option value="female">Meera (Female, Warm)</option>
-                  <option value="male">Ravish (Male, Professional)</option>
-                </select>
-              </div>
-              
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-secondary uppercase tracking-wider">Primary Language</label>
-                <select 
-                  value={language}
-                  onChange={(e) => setLanguage(e.target.value)}
-                  className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:border-accent text-white transition-colors"
-                >
-                  <option value="auto">Auto-Detect (Hinglish/Hindi/English)</option>
-                  <option value="en">English Only</option>
-                  <option value="hi">Hindi Only</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-surface border border-border rounded-xl p-6 shadow-sm">
-            <h2 className="text-lg font-medium mb-4 border-b border-border pb-4 text-white">Telephony & Routing</h2>
-            <div className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-secondary uppercase tracking-wider block">Telephony Carrier</label>
-                <select 
-                  value={telephonyProvider}
-                  onChange={(e) => setTelephonyProvider(e.target.value as any)}
-                  className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:border-accent text-white transition-colors"
-                >
-                  <option value="exotel">Exotel Gateway</option>
-                </select>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-secondary uppercase tracking-wider block">Answering Plan Mode</label>
+                <label className="text-xs font-semibold text-secondary uppercase tracking-wider block">Automation Rule</label>
                 <select 
                   value={answeringMode}
                   onChange={(e) => setAnsweringMode(e.target.value as any)}
                   className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:border-accent text-white transition-colors"
                 >
-                  <option value="always_answer">Always Answer Directly (Instant AI Receptionist)</option>
-                  <option value="forwarded_only">Answer Forwarded Only (Ring owner first, AI backup)</option>
+                  <option value="always_answer">Always Autoreply (24/7 AI Automation)</option>
+                  <option value="forwarded_only">Intelligent Assistant (Only auto-replies to bookings/FAQs)</option>
                 </select>
-                <p className="text-[10px] text-secondary mt-1 leading-relaxed">
+                <p className="text-[10px] text-secondary mt-1.5 leading-relaxed">
                   {answeringMode === 'always_answer' 
-                    ? 'The AI agent answers immediately when dialed.' 
-                    : 'Exotel will dial your fallback phone number first. AI receptionist speaks only if you do not pick up.'
+                    ? 'Jawaab AI replies automatically to every customer query instantly.' 
+                    : 'Jawaab AI handles appointments booking and FAQ inquiries, forwarding complex support messages directly to you.'
                   }
                 </p>
               </div>
@@ -425,10 +376,10 @@ export default function BusinessProfile() {
           </div>
 
           <div className="bg-surface border border-border rounded-xl p-6 shadow-sm">
-            <h2 className="text-lg font-medium mb-4 border-b border-border pb-4 text-white">Notifications</h2>
+            <h2 className="text-lg font-medium mb-4 border-b border-border pb-4 text-white font-syne">WhatsApp CRM Delivery</h2>
             <div className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-secondary uppercase tracking-wider">WhatsApp Delivery Number</label>
+                <label className="text-xs font-semibold text-secondary uppercase tracking-wider">Owner Delivery Number</label>
                 <input 
                   type="tel" 
                   value={whatsappNumber}
@@ -436,9 +387,15 @@ export default function BusinessProfile() {
                   className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:border-accent text-white transition-colors" 
                   required
                 />
-                <p className="text-[10px] text-secondary mt-1">This number will receive instant lead summaries.</p>
+                <p className="text-[10px] text-secondary mt-1">Number that will receive real-time follow-up / callback alerts from the automation flow.</p>
               </div>
             </div>
+          </div>
+
+          <div className="bg-surface border border-border rounded-xl p-6 shadow-sm flex flex-col items-center justify-center py-8">
+            <Shield className="w-10 h-10 text-[#25D366] mb-3 animate-pulse" />
+            <h3 className="text-xs font-semibold text-white">Meta Verified Webhook</h3>
+            <p className="text-[10px] text-secondary text-center mt-1 max-w-[180px]">Automated chat logs and appointments are secured via Meta Verified SSL protocols.</p>
           </div>
         </div>
       </div>

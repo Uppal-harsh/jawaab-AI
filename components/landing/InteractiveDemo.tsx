@@ -79,20 +79,27 @@ export function InteractiveDemo() {
   return (
     <div ref={containerRef} className="relative w-full max-w-4xl mx-auto mt-10 md:mt-20 flex flex-col md:flex-row items-center justify-center gap-8 md:gap-12 px-4">
       
-      {/* Customer Phone Side */}
+      {/* Customer WhatsApp Side */}
       <div className="relative w-full max-w-[280px] h-[440px] md:h-[500px] rounded-[2rem] md:rounded-[2.5rem] border-[6px] md:border-[8px] border-[#222] bg-[#111] overflow-hidden shadow-2xl flex flex-col">
         <div className="absolute top-0 inset-x-0 h-5 md:h-6 bg-[#222] rounded-b-3xl w-24 md:w-32 mx-auto z-10"></div>
-        <div className="demo-phone-screen flex-1 p-4 md:p-6 flex flex-col justify-center items-center opacity-0">
-          <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-accent/20 flex items-center justify-center mb-4 md:mb-6">
-            <Phone className="w-6 h-6 md:w-8 md:h-8 text-accent animate-pulse" />
+        <div className="demo-phone-screen flex-1 p-4 md:p-6 flex flex-col justify-start opacity-0 pt-8 md:pt-10">
+          <div className="flex items-center gap-2 border-b border-border pb-2.5 mb-4">
+            <div className="w-8 h-8 rounded-full bg-[#25D366] flex items-center justify-center font-bold text-xs text-black">WA</div>
+            <div>
+              <h3 className="text-xs font-semibold text-white">Jawaab Customer Support</h3>
+              <p className="text-[9px] text-green-400 font-medium">Online</p>
+            </div>
           </div>
-          <h3 className="text-lg md:text-xl font-medium mb-1 md:mb-2">Jawaab AI</h3>
-          <p className="text-secondary text-sm mb-8 md:mb-12">Ringing...</p>
-          
-          <div className="demo-ai-wave flex items-end gap-1 h-10 md:h-12 opacity-0">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="w-1 md:w-1.5 bg-accent rounded-full h-full origin-bottom" style={{ transform: `scaleY(${Math.random() * 0.5 + 0.5})` }}></div>
-            ))}
+          <div className="space-y-3 flex-1 flex flex-col justify-end pb-4">
+            <div className="demo-ai-wave bg-[#222] p-2.5 rounded-lg text-[10px] text-secondary self-start max-w-[85%] font-medium">
+              Hello! Welcome to SmileCare. How can I help you book an appointment today?
+            </div>
+            <div className="demo-transcript-line opacity-0 bg-[#075e54] text-white p-2.5 rounded-lg text-[10px] self-end max-w-[85%] font-medium">
+              Hi, I want to schedule a dental checkup for tomorrow at 3 PM. My name is Rahul.
+            </div>
+            <div className="demo-transcript-line opacity-0 bg-[#222] p-2.5 rounded-lg text-[10px] text-secondary self-start max-w-[85%] font-medium">
+              Got it, Rahul! I have reserved tomorrow at 3 PM for you. Greet you then! [INTENT: BookAppointment]
+            </div>
           </div>
         </div>
       </div>
@@ -100,46 +107,37 @@ export function InteractiveDemo() {
       {/* Connection Logic Arrow */}
       <div className="hidden md:flex flex-col items-center gap-2 md:gap-4 text-secondary">
         <div className="text-[10px] md:text-xs tracking-widest uppercase opacity-50 text-center">
-          {step === 1 && 'Call Initiated'}
-          {step === 2 && 'AI Answers'}
-          {step === 3 && 'Capturing Lead'}
-          {step === 4 && 'Sending Summary'}
+          {step === 1 && 'Message Received'}
+          {step === 2 && 'AI Analyzes Context'}
+          {step === 3 && 'Replies & Logs Lead'}
+          {step === 4 && 'CRM Dashboard Updated'}
         </div>
         <ArrowRight className="w-5 h-5 md:w-6 md:h-6 animate-pulse text-border" />
       </div>
 
-      {/* Owner Phone Side / WhatsApp */}
+      {/* Business CRM Side */}
       <div className="relative w-full max-w-[280px] h-[440px] md:h-[500px] rounded-[2rem] md:rounded-[2.5rem] border-[6px] md:border-[8px] border-[#222] bg-surface overflow-hidden shadow-2xl flex flex-col p-3 md:p-4">
         <div className="flex items-center justify-between border-b border-border pb-3 md:pb-4 mb-3 md:mb-4">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-[#25D366] flex items-center justify-center">
-              <MessageSquare className="w-3.5 h-3.5 md:w-4 md:h-4 text-black" />
+            <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-accent/20 flex items-center justify-center">
+              <MessageSquare className="w-3.5 h-3.5 md:w-4 md:h-4 text-accent" />
             </div>
-            <span className="font-medium text-xs md:text-sm">Owner WhatsApp</span>
+            <span className="font-medium text-xs md:text-sm">Jawaab CRM Portal</span>
           </div>
         </div>
 
-        <div className="flex-1 flex flex-col gap-2 md:gap-3 overflow-hidden">
-          <div className="demo-transcript-line opacity-0 bg-[#222] p-2.5 md:p-3 rounded-lg text-[11px] md:text-xs text-secondary self-start max-w-[85%]">
-            "Hello, do you have appointments open today?"
-          </div>
-          <div className="demo-transcript-line opacity-0 bg-accent/10 text-accent p-2.5 md:p-3 rounded-lg text-[11px] md:text-xs self-end max-w-[85%]">
-            "Yes, we have a slot at 4 PM. May I have your name?"
-          </div>
-          <div className="demo-transcript-line opacity-0 bg-[#222] p-2.5 md:p-3 rounded-lg text-[11px] md:text-xs text-secondary self-start max-w-[85%]">
-            "It's Rahul."
-          </div>
-          
-          <div className="demo-whatsapp-card opacity-0 mt-auto bg-[#2A2A2A] border border-border p-3 md:p-4 rounded-xl shadow-lg relative bottom-2 md:bottom-4">
+        <div className="flex-1 flex flex-col justify-start">
+          <div className="demo-whatsapp-card opacity-0 bg-[#2A2A2A] border border-border p-3 md:p-4 rounded-xl shadow-lg mt-4">
             <h4 className="text-xs md:text-sm font-semibold text-white mb-1.5 md:mb-2 flex items-center gap-1.5">
-              <span className="w-1.5 md:w-2 h-1.5 md:h-2 rounded-full bg-accent animate-pulse"></span>
-              New Lead Captured
+              <span className="w-1.5 md:w-2 h-1.5 md:h-2 rounded-full bg-green-400 animate-pulse"></span>
+              New CRM Lead Logged
             </h4>
             <p className="text-[10px] md:text-xs text-secondary mb-0.5 md:mb-1"><strong>Name:</strong> Rahul</p>
-            <p className="text-[10px] md:text-xs text-secondary mb-0.5 md:mb-1"><strong>Needs:</strong> Appointment today</p>
-            <p className="text-[10px] md:text-xs text-secondary mb-2 md:mb-3"><strong>Status:</strong> Callback Requested ⚠️</p>
+            <p className="text-[10px] md:text-xs text-secondary mb-0.5 md:mb-1"><strong>Channel:</strong> WhatsApp Business</p>
+            <p className="text-[10px] md:text-xs text-secondary mb-0.5 md:mb-1"><strong>Status:</strong> Appointment Booked ✅</p>
+            <p className="text-[10px] md:text-xs text-secondary mb-2 md:mb-3"><strong>Booked time:</strong> Tomorrow 3:00 PM</p>
             <button className="w-full bg-[#25D366] hover:bg-[#20bd5a] text-black text-[10px] md:text-xs font-semibold py-1.5 md:py-2 rounded transition-colors">
-              Call Back Now
+              Chat on WhatsApp
             </button>
           </div>
         </div>

@@ -50,17 +50,17 @@ export default function LandingPage() {
       {/* Hero Section */}
       <section className="pt-28 md:pt-40 pb-16 md:pb-20 px-4 md:px-6 max-w-5xl mx-auto text-center flex flex-col items-center">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-border bg-surface text-xs text-secondary mb-8">
-          <span className="w-2 h-2 rounded-full bg-accent animate-pulse"></span>
-          Now supporting Hinglish and native Hindi
+          <span className="w-2 h-2 rounded-full bg-[#25D366] animate-pulse"></span>
+          24/7 WhatsApp Chat Automation & Booking
         </div>
         
         <h1 
           className="hero-heading text-5xl md:text-7xl font-semibold tracking-tighter text-balance mb-6"
-          dangerouslySetInnerHTML={{ __html: splitText('Never Miss Another Customer.') }}
+          dangerouslySetInnerHTML={{ __html: splitText('Automate Customer Chats & Bookings.') }}
         />
         
         <p className="hero-sub text-lg md:text-xl text-secondary text-balance max-w-2xl mb-10 opacity-0">
-          When you can't answer the phone, Jawaab AI answers for you, captures every lead, and instantly sends you a WhatsApp summary.
+          Jawaab AI replies to your WhatsApp messages, handles bookings, and populates your CRM automatically.
         </p>
         
         <div className="hero-cta flex flex-col sm:flex-row items-center gap-4 opacity-0">
@@ -68,27 +68,27 @@ export default function LandingPage() {
           <Button variant="secondary" size="lg" className="w-full sm:w-auto" onClick={() => router.push('/demo')}>Watch Live Demo</Button>
         </div>
       </section>
-
+ 
       {/* Centerpiece Interactive Demo */}
       <section className="py-12 border-b border-border bg-gradient-to-b from-transparent to-surface/50">
         <InteractiveDemo />
       </section>
-
+ 
       {/* Problem Section (Minimal) */}
       <section className="py-24 px-6 text-center max-w-4xl mx-auto border-b border-border">
         <h2 className="text-3xl font-semibold mb-12">Your business is losing leads when you are:</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-secondary">
           <div className="p-6 rounded-2xl bg-surface border border-border">
             <h3 className="text-primary font-medium mb-2">Busy with a customer</h3>
-            <p className="text-sm">You can't pick up the phone while cutting hair or consulting.</p>
+            <p className="text-sm">You can't answer incoming WhatsApp messages while cutting hair or consulting.</p>
           </div>
           <div className="p-6 rounded-2xl bg-surface border border-border">
             <h3 className="text-primary font-medium mb-2">Driving or traveling</h3>
-            <p className="text-sm">Safety comes first, but missed calls mean lost revenue.</p>
+            <p className="text-sm">You are busy on the road, leaving prospective clients waiting for replies.</p>
           </div>
           <div className="p-6 rounded-2xl bg-surface border border-border">
             <h3 className="text-primary font-medium mb-2">After business hours</h3>
-            <p className="text-sm">Customers search and call at 10 PM. You are asleep.</p>
+            <p className="text-sm">Customers message late at night. Jawaab AI replies instantly and secures the booking.</p>
           </div>
         </div>
       </section>

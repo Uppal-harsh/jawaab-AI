@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "npx ts-node -O \"{\\\"module\\\": \\\"commonjs\\\"}\" server.ts",
+    "dev": "next dev",
     "build": "next build",
-    "start": "npx ts-node -O \"{\\\"module\\\": \\\"commonjs\\\"}\" server.ts",
+    "start": "next start",
     "lint": "next lint"
   },
   "dependencies": {

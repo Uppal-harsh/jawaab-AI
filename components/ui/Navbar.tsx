@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { supabase } from '../../lib/supabase-client';
 import { Button } from './Button';
-import { X, CheckCircle, Flame, Shield, HelpCircle, PhoneCall, User } from 'lucide-react';
+import { X, CheckCircle, Flame, Shield, HelpCircle, MessageSquare, Calendar, User } from 'lucide-react';
 
 export function Navbar() {
   const router = useRouter();
@@ -139,24 +139,24 @@ export function Navbar() {
               <div className="flex gap-3.5 p-3 rounded-xl bg-background/50 border border-border">
                 <CheckCircle className="w-5 h-5 text-accent shrink-0 mt-0.5" />
                 <div className="space-y-0.5">
-                  <h4 className="text-xs font-semibold text-white">50 Incoming Calls Included</h4>
-                  <p className="text-[11px] text-secondary">Free temporary SIP routing line activated immediately.</p>
+                  <h4 className="text-xs font-semibold text-white">Free Setup & WhatsApp Testing</h4>
+                  <p className="text-[11px] text-secondary">Configure Meta API and test free for 14 days immediately.</p>
                 </div>
               </div>
 
               <div className="flex gap-3.5 p-3 rounded-xl bg-background/50 border border-border">
-                <PhoneCall className="w-5 h-5 text-accent shrink-0 mt-0.5" />
+                <MessageSquare className="w-5 h-5 text-accent shrink-0 mt-0.5" />
                 <div className="space-y-0.5">
-                  <h4 className="text-xs font-semibold text-white">24/7 AI Voice Receptionist</h4>
-                  <p className="text-[11px] text-secondary">Answers natural Hinglish, Hindi, and English customer queries.</p>
+                  <h4 className="text-xs font-semibold text-white">24/7 WhatsApp Chat Automation</h4>
+                  <p className="text-[11px] text-secondary">Answers natural Hinglish, Hindi, and English customer message queries.</p>
                 </div>
               </div>
 
               <div className="flex gap-3.5 p-3 rounded-xl bg-background/50 border border-border">
-                <Shield className="w-5 h-5 text-accent shrink-0 mt-0.5" />
+                <Calendar className="w-5 h-5 text-accent shrink-0 mt-0.5" />
                 <div className="space-y-0.5">
-                  <h4 className="text-xs font-semibold text-white">Instant WhatsApp Lead Summaries</h4>
-                  <p className="text-[11px] text-secondary">Captured names, numbers, and call logs sent straight to WhatsApp.</p>
+                  <h4 className="text-xs font-semibold text-white">Automated CRM & Lead Sync</h4>
+                  <p className="text-[11px] text-secondary">Captured names, appointments, and transcripts stored in your CRM.</p>
                 </div>
               </div>
 

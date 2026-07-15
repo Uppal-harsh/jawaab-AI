@@ -77,4 +77,43 @@ _Action: Click the number to callback immediately._`;
 
     return false;
   }
+
+  /**
+   * Sends a general text message to a customer
+   */
+  static async sendTextMessage(to: string, messageText: string): Promise<boolean> {
+    const url = `${this.baseUrl}/${this.phoneNumberId}/messages`;
+    const body = {
+      messaging_product: 'whatsapp',
+      recipient_type: 'individual',
+      to,
+      type: 'text',
+      text: {
+        preview_url: false,
+        body: messageText,
+      },
+    };
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+      });
+
+      if (!response.ok) {
+        const errText = await response.text();
+        console.error(`[WhatsAppService.sendTextMessage] HTTP ${response.status}: ${errText}`);
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('[WhatsAppService.sendTextMessage] Error:', error);
+      return false;
+    }
+  }
 }
