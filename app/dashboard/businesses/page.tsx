@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Button } from '../../../components/ui/Button';
-import { Save, Plus, Trash2, Loader2, MessageSquare, Shield } from 'lucide-react';
+import { Save, Plus, Trash2, Loader2, MessageSquare, Shield, Sparkles, AlertCircle, Edit, CheckCircle } from 'lucide-react';
 
 interface KnowledgeCard {
   id?: string;
@@ -12,13 +12,18 @@ interface KnowledgeCard {
 }
 
 export default function BusinessProfile() {
-  // Business states
-  const [name, setName] = useState('SmileCare Dental');
-  const [ownerName, setOwnerName] = useState('Dr. Sharma');
-  const [phone, setPhone] = useState('+91 98765 43210');
-  const [greeting, setGreeting] = useState('Hello! Welcome to SmileCare Dental. How can we help you today?');
-  const [whatsappNumber, setWhatsappNumber] = useState('+91 98765 43210');
+  // Business states - START FULLY EMPTY
+  const [name, setName] = useState('');
+  const [ownerName, setOwnerName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [greeting, setGreeting] = useState('');
+  const [whatsappNumber, setWhatsappNumber] = useState('');
   const [answeringMode, setAnsweringMode] = useState<'always_answer' | 'forwarded_only'>('always_answer');
+  const [systemPrompt, setSystemPrompt] = useState('');
+  
+  // Custom or Generated Script option
+  const [scriptMode, setScriptMode] = useState<'write' | 'generate'>('write');
+  const [isGeneratingScript, setIsGeneratingScript] = useState(false);
 
   // UI state feedback
   const [loading, setLoading] = useState(false);
@@ -33,14 +38,31 @@ export default function BusinessProfile() {
   const [newCategory, setNewCategory] = useState('faq');
   const [cardSubmitting, setCardSubmitting] = useState(false);
 
+  // Calculate completion percentage based on the 6 key fields
+  const getCompletionStats = () => {
+    const fields = [
+      { name: 'Business Name', filled: !!name.trim() },
+      { name: 'Owner Name', filled: !!ownerName.trim() },
+      { name: 'Phone Number', filled: !!phone.trim() },
+      { name: 'CRM Delivery Number', filled: !!whatsappNumber.trim() },
+      { name: 'Greeting Message', filled: !!greeting.trim() },
+      { name: 'Bot Script', filled: !!systemPrompt.trim() },
+    ];
+    const filledCount = fields.filter((f) => f.filled).length;
+    const percentage = Math.round((filledCount / fields.length) * 100);
+    return { percentage, filledCount, total: fields.length, fields };
+  };
+
+  const { percentage, filledCount, total } = getCompletionStats();
+  const isProfileLocked = percentage < 60; // 60% completion threshold
+
   // Fetch business and cards on mount
   useEffect(() => {
     async function fetchData() {
       try {
-        // Fetch Business profile
         const bRes = await fetch('/api/business');
         if (bRes.ok) {
-          const { business, settings } = await bRes.json();
+          const { business, settings, promptConfig } = await bRes.json();
           if (business) {
             setName(business.name || '');
             setOwnerName(business.owner_name || '');
@@ -51,9 +73,10 @@ export default function BusinessProfile() {
             setGreeting(settings.greeting_message || '');
             setAnsweringMode(settings.answering_mode || 'always_answer');
           }
+          if (promptConfig) {
+            setSystemPrompt(promptConfig.system_prompt || '');
+          }
         }
-        
-        // Fetch Knowledge Cards
         await fetchCards();
       } catch (err) {
         console.error('Failed to prefill inputs:', err);
@@ -81,7 +104,16 @@ export default function BusinessProfile() {
     setLoading(true);
     setStatusMsg(null);
 
-    // Prepare matching payload schema (without voice settings to match modified DB/API)
+    // Block saving answering configuration if profile is incomplete
+    if (isProfileLocked && answeringMode === 'always_answer') {
+      setStatusMsg({ 
+        type: 'error', 
+        text: 'Cannot save changes. Please complete at least 60% of your business details to activate the bot.' 
+      });
+      setLoading(false);
+      return;
+    }
+
     const payload = {
       name,
       owner_name: ownerName,
@@ -99,6 +131,7 @@ export default function BusinessProfile() {
       fallback_number: phone,
       greeting_message: greeting,
       answering_mode: answeringMode,
+      system_prompt: systemPrompt,
     };
 
     try {
@@ -118,6 +151,32 @@ export default function BusinessProfile() {
       setStatusMsg({ type: 'error', text: err.message || 'An error occurred while saving.' });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleAIScriptGen = async () => {
+    if (!name || !ownerName || !greeting) {
+      alert('Please fill out Business Name, Owner Name, and AI Greeting first so the AI has enough context.');
+      return;
+    }
+    
+    setIsGeneratingScript(true);
+    try {
+      const res = await fetch('/api/business/generate-script', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, owner_name: ownerName, phone_number: phone, greeting_message: greeting }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+
+      setSystemPrompt(data.script || '');
+      setScriptMode('write'); // focus write editor
+      setStatusMsg({ type: 'success', text: 'AI prompt script generated successfully! You can customize it below.' });
+    } catch (e: any) {
+      alert(e.message || 'Could not generate script via OpenRouter.');
+    } finally {
+      setIsGeneratingScript(false);
     }
   };
 
@@ -179,44 +238,97 @@ export default function BusinessProfile() {
     );
   }
 
+  // Circular ring variables
+  const radius = 36;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference - (percentage / 100) * circumference;
+
   return (
     <form className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700" onSubmit={handleSaveProfile}>
-      <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-semibold tracking-tight mb-1 font-syne text-white">Business Profile</h1>
-          <p className="text-secondary text-sm">Configure how the AI WhatsApp automation represents your company.</p>
+      
+      {/* Header with Circular Completion Tracker */}
+      <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-surface border border-border p-6 rounded-2xl shadow-sm">
+        <div className="flex items-center gap-5">
+          {/* SVG Progress Ring */}
+          <div className="relative w-20 h-20 flex items-center justify-center select-none flex-shrink-0">
+            <svg className="w-full h-full transform -rotate-90">
+              <circle 
+                cx="40" 
+                cy="40" 
+                r={radius} 
+                className="stroke-border fill-transparent" 
+                strokeWidth="6" 
+              />
+              <circle 
+                cx="40" 
+                cy="40" 
+                r={radius} 
+                className="stroke-accent fill-transparent transition-all duration-500 ease-out" 
+                strokeWidth="6" 
+                strokeDasharray={circumference}
+                strokeDashoffset={strokeDashoffset}
+                strokeLinecap="round"
+              />
+            </svg>
+            <span className="absolute text-sm font-bold text-white font-syne">{percentage}%</span>
+          </div>
+
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-white font-syne">Business Profile</h1>
+            <p className="text-secondary text-xs mt-1">Complete mandatory details to launch your AI WhatsApp automation.</p>
+            <div className="flex gap-2.5 mt-2">
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                isProfileLocked 
+                  ? 'bg-red-500/10 border border-red-500/20 text-red-400' 
+                  : 'bg-green-500/10 border border-green-500/20 text-green-400'
+              }`}>
+                {filledCount} of {total} fields filled
+              </span>
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                isProfileLocked 
+                  ? 'bg-amber-500/10 border border-amber-500/20 text-amber-400' 
+                  : 'bg-accent/10 border border-accent/20 text-accent'
+              }`}>
+                {isProfileLocked ? 'Min 60% required to activate' : 'Automation Unlocked'}
+              </span>
+            </div>
+          </div>
         </div>
-        <Button type="submit" className="gap-2 font-bold" disabled={loading}>
-          {loading ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : (
-            <Save className="w-4 h-4" />
-          )}
-          Save Changes
+
+        <Button type="submit" className="gap-2 font-bold w-full md:w-auto" disabled={loading}>
+          {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+          Save Profile
         </Button>
       </header>
 
       {statusMsg && (
-        <div className={`p-4 rounded-xl border text-xs ${
+        <div className={`p-4 rounded-xl border text-xs flex items-start gap-2 ${
           statusMsg.type === 'success' 
             ? 'bg-accent/10 border-accent/20 text-accent' 
             : 'bg-red-500/10 border-red-500/20 text-red-400'
         }`}>
-          {statusMsg.text}
+          <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+          <span>{statusMsg.text}</span>
         </div>
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
         {/* Main Settings */}
         <div className="lg:col-span-2 space-y-6">
+          
+          {/* General Information Card */}
           <div className="bg-surface border border-border rounded-xl p-6 shadow-sm">
-            <h2 className="text-lg font-medium mb-4 border-b border-border pb-4 text-white font-syne">General Information</h2>
+            <h2 className="text-lg font-medium mb-4 border-b border-border pb-4 text-white font-syne flex items-center gap-2">
+              <span className="w-1.5 h-3 bg-accent rounded-full"></span> General Information
+            </h2>
             <div className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-secondary uppercase tracking-wider">Business Name</label>
+                  <label className="text-xs font-semibold text-secondary uppercase tracking-wider block">Business Name *</label>
                   <input 
                     type="text" 
+                    placeholder="e.g. SmileCare Dental"
                     value={name} 
                     onChange={(e) => setName(e.target.value)}
                     className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:border-accent text-white transition-colors" 
@@ -224,9 +336,10 @@ export default function BusinessProfile() {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-secondary uppercase tracking-wider">Owner Name</label>
+                  <label className="text-xs font-semibold text-secondary uppercase tracking-wider block">Owner Name *</label>
                   <input 
                     type="text" 
+                    placeholder="e.g. Dr. Sharma"
                     value={ownerName} 
                     onChange={(e) => setOwnerName(e.target.value)}
                     className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:border-accent text-white transition-colors" 
@@ -236,9 +349,10 @@ export default function BusinessProfile() {
               </div>
               
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-secondary uppercase tracking-wider">Business Phone Number</label>
+                <label className="text-xs font-semibold text-secondary uppercase tracking-wider block">Business Phone Number *</label>
                 <input 
                   type="tel" 
+                  placeholder="e.g. +91 98765 43210"
                   value={phone} 
                   onChange={(e) => setPhone(e.target.value)}
                   className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:border-accent text-white transition-colors" 
@@ -247,9 +361,10 @@ export default function BusinessProfile() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-secondary uppercase tracking-wider">AI Greeting Message (Sent to clients when they text)</label>
+                <label className="text-xs font-semibold text-secondary uppercase tracking-wider block">AI Greeting Message *</label>
                 <textarea 
                   rows={2} 
+                  placeholder="Hello! Welcome to SmileCare Dental. How can we help you today?"
                   value={greeting} 
                   onChange={(e) => setGreeting(e.target.value)}
                   className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:border-accent text-white transition-colors resize-none" 
@@ -259,10 +374,81 @@ export default function BusinessProfile() {
             </div>
           </div>
 
+          {/* WhatsApp bot prompt instructions script builder */}
+          <div className="bg-surface border border-border rounded-xl p-6 shadow-sm space-y-4">
+            <div className="flex justify-between items-center border-b border-border pb-4">
+              <h2 className="text-lg font-medium text-white font-syne flex items-center gap-2">
+                <span className="w-1.5 h-3 bg-accent rounded-full"></span> WhatsApp Bot Script
+              </h2>
+              <div className="flex items-center gap-1.5 bg-background border border-border rounded-lg p-0.5">
+                <button 
+                  type="button"
+                  onClick={() => setScriptMode('write')}
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs font-bold transition-all ${
+                    scriptMode === 'write' ? 'bg-surface text-white' : 'text-secondary hover:text-white'
+                  }`}
+                >
+                  <Edit className="w-3.5 h-3.5" /> Edit
+                </button>
+                <button 
+                  type="button"
+                  onClick={() => setScriptMode('generate')}
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs font-bold transition-all ${
+                    scriptMode === 'generate' ? 'bg-surface text-white' : 'text-secondary hover:text-white'
+                  }`}
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-accent" /> AI draft
+                </button>
+              </div>
+            </div>
+
+            {scriptMode === 'generate' ? (
+              <div className="bg-background border border-border rounded-xl p-5 text-center space-y-4 py-8 animate-in fade-in duration-300">
+                <Sparkles className="w-8 h-8 text-accent mx-auto animate-pulse" />
+                <div className="max-w-xs mx-auto space-y-1">
+                  <h3 className="font-semibold text-white text-sm font-syne">AI script Writer</h3>
+                  <p className="text-[10px] text-secondary">Instantly outline client greeting protocols, business rules, and appointment guidance using OpenRouter context drafts.</p>
+                </div>
+                <Button 
+                  type="button" 
+                  onClick={handleAIScriptGen}
+                  disabled={isGeneratingScript}
+                  className="mx-auto font-bold text-xs"
+                >
+                  {isGeneratingScript ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" /> Drafting Instructions...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4 text-background" /> Draft prompt script
+                    </>
+                  )}
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-2 animate-in fade-in duration-300">
+                <textarea 
+                  rows={6}
+                  placeholder="Describe your bot's behavior, services pricing, and calendar policies..."
+                  value={systemPrompt}
+                  onChange={(e) => setSystemPrompt(e.target.value)}
+                  className="w-full bg-background border border-border rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-accent text-white font-mono leading-relaxed"
+                />
+                <div className="flex justify-between items-center text-[10px] text-secondary">
+                  <span>Describe pricing lists, appointment timing constraints, etc.</span>
+                  <span className="font-bold">{systemPrompt.length} characters</span>
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Knowledge Cards */}
           <div className="bg-surface border border-border rounded-xl p-6 shadow-sm">
             <div className="flex justify-between items-center border-b border-border pb-4 mb-4">
-              <h2 className="text-lg font-medium text-white font-syne">Knowledge Base FAQs</h2>
+              <h2 className="text-lg font-medium text-white font-syne flex items-center gap-2">
+                <span className="w-1.5 h-3 bg-accent rounded-full"></span> Knowledge Base FAQs
+              </h2>
               <Button 
                 type="button" 
                 size="sm" 
@@ -274,7 +460,6 @@ export default function BusinessProfile() {
               </Button>
             </div>
 
-            {/* Add card inline form */}
             {showAddCard && (
               <div className="bg-background border border-border rounded-lg p-4 mb-4 space-y-3 animate-in fade-in duration-300">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -352,36 +537,62 @@ export default function BusinessProfile() {
 
         {/* Sidebar Settings */}
         <div className="space-y-6">
-          <div className="bg-surface border border-border rounded-xl p-6 shadow-sm">
-            <h2 className="text-lg font-medium mb-4 border-b border-border pb-4 text-white font-syne">WhatsApp Automation Mode</h2>
-            <div className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-secondary uppercase tracking-wider block">Automation Rule</label>
-                <select 
-                  value={answeringMode}
-                  onChange={(e) => setAnsweringMode(e.target.value as any)}
-                  className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:border-accent text-white transition-colors"
-                >
-                  <option value="always_answer">Always Autoreply (24/7 AI Automation)</option>
-                  <option value="forwarded_only">Intelligent Assistant (Only auto-replies to bookings/FAQs)</option>
-                </select>
-                <p className="text-[10px] text-secondary mt-1.5 leading-relaxed">
-                  {answeringMode === 'always_answer' 
-                    ? 'Jawaab AI replies automatically to every customer query instantly.' 
-                    : 'Jawaab AI handles appointments booking and FAQ inquiries, forwarding complex support messages directly to you.'
-                  }
-                </p>
+          
+          {/* WhatsApp Automation Switcher Card */}
+          <div className="bg-surface border border-border rounded-xl p-6 shadow-sm relative overflow-hidden">
+            <h2 className="text-lg font-medium mb-4 border-b border-border pb-4 text-white font-syne flex items-center gap-2">
+              <span className="w-1.5 h-3 bg-accent rounded-full"></span> Automation Mode
+            </h2>
+            
+            {isProfileLocked ? (
+              // LOCKED VIEW OVERLAY for under 60% completion
+              <div className="bg-background/80 backdrop-blur-sm border border-red-500/20 p-4 rounded-xl text-center space-y-3">
+                <AlertCircle className="w-7 h-7 text-red-400 mx-auto" />
+                <div>
+                  <h4 className="text-xs font-bold text-white font-syne">Automation Locked</h4>
+                  <p className="text-[10px] text-secondary mt-1 leading-relaxed">
+                    You must complete at least 60% of your business details to start the WhatsApp agent.
+                  </p>
+                </div>
+                <div className="h-[38px] bg-white/5 border border-border rounded px-3 flex items-center justify-between text-[10px] text-secondary select-none">
+                  <span>Currently Disabled</span>
+                  <span className="w-2 h-2 rounded-full bg-red-400"></span>
+                </div>
               </div>
-            </div>
+            ) : (
+              // UNLOCKED SELECT MENU
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-secondary uppercase tracking-wider block">Automation Rule</label>
+                  <select 
+                    value={answeringMode}
+                    onChange={(e) => setAnsweringMode(e.target.value as any)}
+                    className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:border-accent text-white transition-colors"
+                  >
+                    <option value="always_answer">Always Autoreply (24/7 AI Automation)</option>
+                    <option value="forwarded_only">Intelligent Assistant (Forward complex requests)</option>
+                  </select>
+                  <p className="text-[10px] text-secondary mt-1.5 leading-relaxed">
+                    {answeringMode === 'always_answer' 
+                      ? 'Jawaab AI replies automatically to every customer query instantly.' 
+                      : 'Jawaab AI handles appointments booking and FAQ inquiries, forwarding complex support messages directly to you.'
+                    }
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="bg-surface border border-border rounded-xl p-6 shadow-sm">
-            <h2 className="text-lg font-medium mb-4 border-b border-border pb-4 text-white font-syne">WhatsApp CRM Delivery</h2>
+            <h2 className="text-lg font-medium mb-4 border-b border-border pb-4 text-white font-syne flex items-center gap-2">
+              <span className="w-1.5 h-3 bg-accent rounded-full"></span> WhatsApp CRM Delivery
+            </h2>
             <div className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-secondary uppercase tracking-wider">Owner Delivery Number</label>
+                <label className="text-xs font-semibold text-secondary uppercase tracking-wider block">Owner Delivery Number *</label>
                 <input 
                   type="tel" 
+                  placeholder="e.g. +91 98765 43210"
                   value={whatsappNumber}
                   onChange={(e) => setWhatsappNumber(e.target.value)}
                   className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:border-accent text-white transition-colors" 

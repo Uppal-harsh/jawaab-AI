@@ -21,6 +21,7 @@ const businessSchema = z.object({
   fallback_number: z.string().nullable(),
   greeting_message: z.string().min(1),
   answering_mode: z.enum(['always_answer', 'forwarded_only']).default('always_answer'),
+  system_prompt: z.string().optional().nullable(),
 });
 
 export async function GET(req: Request) {
@@ -48,7 +49,14 @@ export async function GET(req: Request) {
 
     if (sErr) throw sErr;
 
-    return NextResponse.json({ business, settings });
+    const { data: promptConfig } = await supabaseAdmin
+      .from('prompt_configurations')
+      .select('*')
+      .eq('business_id', business.id)
+      .eq('is_active', true)
+      .maybeSingle();
+
+    return NextResponse.json({ business, settings, promptConfig });
   } catch (error) {
     console.error('[Business API GET] Error:', error);
     return NextResponse.json({ error: 'Failed to retrieve configuration' }, { status: 500 });
@@ -121,6 +129,34 @@ export async function POST(req: Request) {
       }, { onConflict: 'business_id' });
 
     if (settingsError) throw settingsError;
+
+    // Upsert prompt configurations safely
+    const { data: existingPrompt } = await supabaseAdmin
+      .from('prompt_configurations')
+      .select('id')
+      .eq('business_id', businessId)
+      .limit(1)
+      .maybeSingle();
+
+    if (existingPrompt?.id) {
+      const { error: promptError } = await supabaseAdmin
+        .from('prompt_configurations')
+        .update({
+          system_prompt: val.system_prompt || '',
+        })
+        .eq('id', existingPrompt.id);
+      if (promptError) throw promptError;
+    } else {
+      const { error: promptError } = await supabaseAdmin
+        .from('prompt_configurations')
+        .insert({
+          business_id: businessId,
+          system_prompt: val.system_prompt || '',
+          safety_rules: 'Be polite. Do not hallucinate facts outside the provided cards. Keep answers concise.',
+          is_active: true,
+        });
+      if (promptError) throw promptError;
+    }
 
     return NextResponse.json({ success: true, businessId });
   } catch (error) {

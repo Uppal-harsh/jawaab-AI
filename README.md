@@ -1,6 +1,6 @@
-# Jawaab AI — 24/7 AI Voice Receptionist
+# Jawaab AI — 24/7 WhatsApp Chat Automation & CRM
 
-Jawaab AI is an intelligent voice receptionist system built for Indian small businesses. When business owners are busy, away, or after-hours, Jawaab AI answers customer calls naturally in Hinglish, Hindi, and English. It queries a custom business knowledge base (Knowledge Cards), resolves FAQs, captures customer lead details, and instantly sends structured call summaries directly to the business owner's WhatsApp.
+Jawaab AI is an intelligent WhatsApp-based chat automation assistant and CRM system built for Indian SMBs (salons, clinics, coaching institutes). It automatically replies to customer inquiries, captures lead logs, schedules non-overlapping appointments, syncs bookings directly with Google Calendar, and alerts business owners on WhatsApp.
 
 ---
 
@@ -8,22 +8,22 @@ Jawaab AI is an intelligent voice receptionist system built for Indian small bus
 
 ```mermaid
 graph TD
-    A[Customer Call] -->|Busy/Forwarded| B(Exotel SIP)
-    B -->|Webhook| C[Next.js Telephony API]
-    C -->|Fetch settings & Knowledge Cards| D[(Supabase DB)]
-    C -->|Generate conversational response| E[OpenRouter LLM]
-    E -->|Speak text response| B
-    B -->|Call completed| F[Next.js Status API]
-    F -->|Analyze transcript & extract lead info| E
-    F -->|Log Call Record & Summary| D
-    F -->|Dispatch Summary Alert| G[WhatsApp Notification]
-    H[Admin Dashboard] -->|Manage settings & Knowledge Cards| D
+    A[Customer Message] -->|WhatsApp| B(Meta Cloud API Webhook)
+    B -->|Trigger webhook| C[Next.js App Server]
+    C -->|Fetch profile, cards & schedules| D[(Supabase DB)]
+    C -->|Construct context & prompts| E[OpenRouter LLM]
+    E -->|Generate natural response| C
+    C -->|1. Reply to customer| A
+    C -->|2. Sync Booking Event| F[Google Calendar Sync]
+    C -->|3. Notify Owner| G[Owner WhatsApp Alert]
+    H[Admin Dashboard] -->|Manage settings, Q&As & view CRM logs| D
 ```
 
 ### Flow Breakdown:
-1. **Call Forwarding**: Customer calls the business. If busy or reject, the carrier forwards the call to Exotel.
-2. **Conversation Loop**: Exotel triggers webhooks to the Next.js API. The API dynamically queries Supabase for the business's active settings and Q&A Knowledge Cards, sends the context to OpenRouter LLM, and streams back the speech response.
-3. **Structured Summary & Alerting**: Upon call hangup, the status callback retrieves the raw transcript, parses caller intent and callback requests using LLM extraction, writes the structured lead records to Supabase, and dispatches a WhatsApp summary to the business owner.
+1. **WhatsApp Webhook Interception**: When a customer messages the business's WhatsApp number, Meta Cloud API sends a webhook to the Next.js API router.
+2. **Context Assembly**: The webhook handler queries active Q&A Knowledge Cards and upcoming booked appointments from Supabase to prevent scheduling conflicts.
+3. **LLM Engine Routing**: The orchestrator sends the context to the OpenRouter LLM service to produce an optimized Hinglish, Hindi, or English reply.
+4. **Calendar Sync & Owner Alert**: If the customer books a slot, the system maps the appointment to the database, syncs it dynamically with Google Calendar (using signed Google JWT tokens), and forwards a summary notification directly to the owner's WhatsApp number.
 
 ---
 
@@ -32,112 +32,101 @@ graph TD
 ```
 jawaab-ai/
 ├── app/                              # Next.js App Router Pages & APIs
-│   ├── api/                          # Telephony, Auth, & Business API Handlers
-│   │   ├── auth/                     # Session & Cookie management
-│   │   └── telephony/                # Exotel webhook processing & status updates
-│   ├── dashboard/                    # Admin Dashboard (Overview, Settings, Logs)
-│   ├── demo/                         # Watch Demo layout
-│   ├── faq/                          # Frequently Asked Questions page
-│   ├── login/                        # Dual-panel customized sign in/up page
-│   ├── onboarding/                   # Onboarding configuration wizard
-│   ├── pricing/                      # Pricing plans layout
-│   ├── layout.tsx                    # Global root layout (metadata, fonts, tailwind)
-│   ├── not-found.tsx                 # Custom 404 page with swinging panda
+│   ├── api/                          # Backend API Handlers
+│   │   ├── auth/                     # Session, Cookie, & OTP verification routes
+│   │   ├── business/                 # Profile management & AI script generator
+│   │   ├── calls/                    # CRM chat history logs
+│   │   ├── knowledge-cards/          # Q&A fact card CRUD
+│   │   └── whatsapp/                 # WhatsApp Webhook receiver
+│   ├── dashboard/                    # CRM Console (Leads charts, History logs, settings)
+│   ├── demo/                         # Sandbox sandbox layout
+│   ├── login/                        # Dual-panel login with phone verification interrupts
+│   ├── onboarding/                   # Onboarding setup wizard
+│   ├── pricing/                      # Pricing plans with SMS/OTP signup popup
 │   └── page.tsx                      # Landing/Home page
-├── components/                       # Shared React Components
-│   ├── landing/                      # Landing page modules (InteractiveDemo, FeatureCards)
-│   └── ui/                           # Base UI elements (Navbar, Button, BrandLogo)
+├── components/                       # Shared React Components (Navbar, Button, BrandLogo)
 ├── hooks/                            # Custom React hooks (anime animations)
 ├── lib/                              # Shared configs (Supabase client init, env validation)
 ├── public/                           # Static Assets (favicon /icon.png, /logo.png, /panda-404.png)
-├── services/                         # External services (OpenRouter LLM chat completions)
-├── supabase/                         # Supabase configuration & table SQL
-│   └── schema.sql                    # Main DB structure setup script
-├── types/                            # Shared TypeScript interfaces
-└── tailwind.config.ts                # Tailwind styling configurations
+├── services/                         # External services (OpenRouter LLM & Google Calendar sync)
+├── supabase/                         # Database schema configuration
+│   └── schema.sql                    # Postgres DB structure setup script
+└── types/                            # Shared TypeScript interfaces
 ```
 
 ---
 
 ## 🚀 Key Features
 
-*   **24/7 Voice Receptionist**: Natural conversation flows answering customer queries, handling appointments, and logging lead information.
-*   **Hinglish & Multilingual Support**: Seamlessly switch or converse in native Hindi, English, or colloquial Hinglish (code-switching).
-*   **Knowledge Cards**: Business owners can configure simple card facts (e.g., pricing, timings, address) to directly guide the voice assistant without LLM hallucinations.
-*   **WhatsApp Summaries**: Instant dispatch of customer details (names, purpose of call, callback request, and full transcripts) straight to WhatsApp.
-*   **Interactive Call Testing**: Sandbox caller simulator to test voice flow configurations in real-time from the dashboard console.
-*   **Splendid UI/UX Layout**: Premium dark-mode user experience, featuring brand milestones, simulated live calls, and custom animations.
+*   **24/7 WhatsApp Chat Automation**: Natural conversation answering custom FAQ inquiries and capturing leads instantly.
+*   **Conflict-Free Booking Scheduler**: Dynamically validates prospective slots against existing schedules in the database to prevent overlapping appointments.
+*   **Google Calendar Integration**: Schedules booking dates dynamically directly into Google Calendar via OAuth2 JWT server-to-server credentials.
+*   **WhatsApp CRM Alerts**: Instantly notifies the business owner's WhatsApp when a booking succeeds or a human fallback is requested.
+*   **Circular Progress Gauge**: Displays profile completion rates (General details, Greeting, Bot Script) with locks to ensure bots are configured before starting.
+*   **AI script Builder**: Drafts optimized conversational instructions using OpenRouter based on profile characteristics.
+*   **SMS/OTP Trial Verification**: Protects trial signups using Twilio-backed phone verification and automatic 24-hour lockout rules.
 
 ---
 
 ## 🛠️ Tech Stack
 
-*   **Frontend & Routing**: [Next.js 14](https://nextjs.org/) (App Router), TypeScript, TailwindCSS
-*   **Backend & Telephony**: Next.js API Routes, Exotel webhook configurations
+*   **Frontend & Routing**: [Next.js 14](https://nextjs.org/) (App Router), TypeScript, Vanilla CSS
 *   **Database & Authentication**: [Supabase](https://supabase.com/) (PostgreSQL, Row Level Security, Client Auth APIs)
-*   **Animations**: [Anime.js](https://animejs.com/) for fluid visual transitions and mock wave simulations
-*   **AI Engine**: [OpenRouter](https://openrouter.ai/) (configured by default to leverage low-latency models like `meta-llama/llama-3.1-8b-instruct` or `google/gemini-flash-1.5`)
+*   **Animations**: [Anime.js](https://animejs.com/) for page loads and progress updates
+*   **AI Routing**: [OpenRouter](https://openrouter.ai/) (supporting low-latency models like `meta-llama/llama-3-8b-instruct` or `google/gemini-flash-1.5`)
+*   **Communications (SMS & CRM)**: [Twilio SMS](https://www.twilio.com/) (for OTP validation) and Meta WhatsApp Cloud API
 
 ---
 
 ## ⚙️ Project Setup & Installation
 
-### 1. Clone the repository and install dependencies
-
+### 1. Install dependencies
 ```bash
 npm install
 ```
 
 ### 2. Configure Environment Variables
-
 Create a `.env` or `.env.local` file at the root of your project:
-
 ```env
 # Supabase Configuration
-NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
+NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
 
+# App Configuration
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+
 # OpenRouter API Configuration
-OPENROUTER_API_KEY=your-openrouter-api-key
+OPENROUTER_API_KEY=your-openrouter-key
 
-# Speech & Translation Integration
-SARVAM_API_KEY=your-sarvam-key
+# Meta WhatsApp Business API Credentials
+WHATSAPP_API_KEY=your-meta-access-token
+WHATSAPP_PHONE_NUMBER_ID=your-whatsapp-phone-id
 
-# Telephony Configuration (Exotel Real-time Stream)
-EXOTEL_ACCOUNT_SID=your-exotel-sid
-EXOTEL_API_KEY=your-exotel-key
-EXOTEL_API_TOKEN=your-exotel-token
-EXOTEL_WEBHOOK_SECRET=your-exotel-webhook-secret (or 'bypass' for local dev)
+# Twilio Credentials (SMS OTP Verification)
+TWILIO_ACCOUNT_SID=your-twilio-sid
+TWILIO_AUTH_TOKEN=your-twilio-auth-token
+TWILIO_PHONE_NUMBER=your-twilio-phone-number
 
-# Notification API (WhatsApp Business API)
-WHATSAPP_API_KEY=your-whatsapp-meta-token
-WHATSAPP_PHONE_NUMBER_ID=your-phone-id
+# Google Service Account JSON credentials (For Calendar sync)
+GOOGLE_CLIENT_EMAIL=your-service-account@project.iam.gserviceaccount.com
+GOOGLE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC..."
+GOOGLE_CALENDAR_ID=your-calendar-id@gmail.com
 ```
 
 ### 3. Setup Database Schema (Supabase)
-
-Make sure you configure the Supabase PostgreSQL database tables using the schema located in [schema.sql](file:///c:/Users/harsh%20uppal/Desktop/jawaab%20AI/supabase/schema.sql):
+Import the schema located in `supabase/schema.sql` into your Supabase SQL Editor:
 *   `businesses` — Stores registration info and owner details.
-*   `business_settings` — Handles operating hours, fallback numbers, and provider choices.
-*   `knowledge_cards` — Q&A facts dynamically injected into context prompts.
-*   `calls` — Logs telephony IDs, caller numbers, duration, and timestamps.
-*   `call_summaries` — Call intelligence summaries and JSON conversation transcripts.
-*   `prompt_configurations` — System level prompts and safety configurations.
-*   `onboarding_preferences` — Step-by-step preferences chosen during onboarding.
+*   `business_settings` — Handles operating hours, greeting templates, and answering rules.
+*   `knowledge_cards` — Custom business Q&A facts.
+*   `calls` — Logs client phone numbers, sessions, and chat activity status.
+*   `call_summaries` — Analyzes client transcripts and schedules.
+*   `prompt_configurations` — Custom system prompts and bot script guidelines.
+*   `phone_trials` — Manages trial lockouts, OTP codes, and active expirations.
+*   `onboarding_preferences` — Configuration choices made during setup.
 
 ### 4. Run Development Server
-
 ```bash
 npm run dev
 ```
-
-*Note: In Phase 2, `npm run dev` boots a custom Next.js server (`server.ts`) in CommonJS mode. This handles both normal HTTP page rendering (on `http://localhost:3000`) and bidirectional real-time Exotel WebSocket audio streams (on `/api/telephony/stream`).*
-
----
-
-## 🎨 Branding & Customizations
-
-*   **Primary Logos**: The brand uses `/logo-navbar.png` as its transparent logo, styled with CSS filters to blend correctly into dark-themed navbars.
-*   **Mascot / 404**: Rendered as a cute swinging panda on bamboo in `app/not-found.tsx`.
-*   **Tab favicon**: Configured globally using the `/icon.png` asset.
+Open [http://localhost:3000](http://localhost:3000) to access the landing page and dashboard.

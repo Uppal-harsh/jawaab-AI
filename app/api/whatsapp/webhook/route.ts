@@ -57,6 +57,36 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Business not configured' }, { status: 404 });
     }
 
+    // Check profile completion percentage (must be >= 60%)
+    const { data: settings } = await supabaseAdmin
+      .from('business_settings')
+      .select('*')
+      .eq('business_id', business.id)
+      .maybeSingle();
+
+    const { data: promptConfig } = await supabaseAdmin
+      .from('prompt_configurations')
+      .select('*')
+      .eq('business_id', business.id)
+      .eq('is_active', true)
+      .maybeSingle();
+
+    const checkFields = [
+      business.name,
+      business.owner_name,
+      business.phone_number,
+      business.whatsapp_number,
+      settings?.greeting_message,
+      promptConfig?.system_prompt
+    ];
+    const filledCount = checkFields.filter(val => val && val.trim().length > 0).length;
+    const completion = Math.round((filledCount / checkFields.length) * 100);
+
+    if (completion < 60) {
+      console.warn(`[WhatsApp Webhook] Processing bypassed: business profile only ${completion}% complete (needs >= 60%)`);
+      return new Response('Profile incomplete', { status: 200 });
+    }
+
     // 2. Retrieve or create active chat session (reusing calls table)
     let chat = await supabaseAdmin
       .from('calls')
