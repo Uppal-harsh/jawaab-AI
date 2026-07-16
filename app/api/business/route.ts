@@ -10,16 +10,16 @@ function isAuthorized(req: Request): boolean {
 
 const businessSchema = z.object({
   name: z.string().min(1),
-  owner_name: z.string().min(1),
-  phone_number: z.string().min(10),
-  whatsapp_number: z.string().min(10),
+  owner_name: z.string().default(''),
+  phone_number: z.string().default(''),
+  whatsapp_number: z.string().default(''),
   operating_hours: z.record(z.object({
     open: z.string(),
     close: z.string(),
     closed: z.boolean(),
   })),
-  fallback_number: z.string().nullable(),
-  greeting_message: z.string().min(1),
+  fallback_number: z.string().nullable().optional(),
+  greeting_message: z.string().default(''),
   answering_mode: z.enum(['always_answer', 'forwarded_only']).default('always_answer'),
   system_prompt: z.string().optional().nullable(),
 });

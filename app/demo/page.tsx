@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { BrandLogo } from '../../components/ui/BrandLogo';
 import { Button } from '../../components/ui/Button';
-import { Play, Volume2, Maximize, CheckCircle2, PhoneCall, Smartphone, Sparkles, MessageSquare } from 'lucide-react';
+import { Play, Volume2, Maximize, CheckCircle2, Smartphone, Sparkles, MessageSquare, LayoutDashboard, CalendarRange } from 'lucide-react';
 import { Navbar } from '../../components/ui/Navbar';
 
 export default function DemoPage() {
@@ -14,28 +14,28 @@ export default function DemoPage() {
   // Workflow steps detailing how Jawaab AI works
   const demoSteps = [
     {
-      title: '1. WhatsApp Initialization',
-      description: 'A customer messages your WhatsApp business number. The Jawaab AI webhook intercepts the message and processes it instantly.',
-      icon: <PhoneCall className="w-5 h-5 text-accent" />,
+      title: '1. WhatsApp Inbound Flow',
+      description: 'A customer texts your salon or clinic on WhatsApp. Jawaab AI replies instantly, qualifying the lead and initiating booking.',
+      icon: <MessageSquare className="w-5 h-5 text-accent" />,
       time: '0:05'
     },
     {
-      title: '2. Chat Automation',
-      description: 'The AI responds within seconds using natural Hinglish, Hindi, or English. It converses with the client exactly like a human representative.',
+      title: '2. Real Salon Workflow',
+      description: 'Customer texts → AI responds immediately to questions from knowledge cards → automatically books appointment slot → sends confirmation reminder.',
+      icon: <CalendarRange className="w-5 h-5 text-accent" />,
+      time: '0:20'
+    },
+    {
+      title: '3. AI Lead Qualification',
+      description: 'The AI gathers details, scores lead priority (1-5 quality rating), and guides them step-by-step through appointment booking.',
       icon: <Sparkles className="w-5 h-5 text-accent" />,
-      time: '0:15'
+      time: '0:40'
     },
     {
-      title: '3. Knowledge Card Extraction',
-      description: 'When the customer asks about pricing, timings, or location, the AI pulls the exact answers from your pre-configured Knowledge Cards to avoid hallucinations.',
-      icon: <CheckCircle2 className="w-5 h-5 text-accent" />,
-      time: '0:35'
-    },
-    {
-      title: '4. CRM Logging & Booking',
-      description: 'The AI books appointments, classifies lead urgency, and automatically creates or updates CRM client records for your team.',
-      icon: <MessageSquare className="w-5 h-5 text-[#25D366]" />,
-      time: '0:50'
+      title: '4. Dashboard Insights',
+      description: 'Monitor your CRM in real time, view lead status funnels, check follow-up history, and track conversion rates instantly.',
+      icon: <LayoutDashboard className="w-5 h-5 text-[#25D366]" />,
+      time: '0:55'
     }
   ];
 

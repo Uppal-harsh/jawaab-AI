@@ -60,7 +60,7 @@ export default function LandingPage() {
         />
         
         <p className="hero-sub text-lg md:text-xl text-secondary text-balance max-w-2xl mb-10 opacity-0">
-          Jawaab AI replies to your WhatsApp messages, handles bookings, and populates your CRM automatically.
+          Jawaab AI automates WhatsApp inquiries for Indian salons, clinics, and service businesses. Qualify leads with AI, book appointments automatically, and never miss a customer again. Just ₹799/month.
         </p>
         
         <div className="hero-cta flex flex-col sm:flex-row items-center gap-4 opacity-0">

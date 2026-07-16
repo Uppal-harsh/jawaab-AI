@@ -6,6 +6,7 @@ import { BrandLogo } from '../../components/ui/BrandLogo';
 import { Button } from '../../components/ui/Button';
 import { Check, ShieldAlert, Zap, Landmark, Globe, Smartphone, Mail, KeyRound, CheckCircle, ArrowRight, X, Loader2 } from 'lucide-react';
 import { Navbar } from '../../components/ui/Navbar';
+import { supabase } from '../../lib/supabase-client';
 
 export default function PricingPage() {
   const router = useRouter();
@@ -30,6 +31,54 @@ export default function PricingPage() {
     if (region === 'IN') return '₹';
     if (region === 'US') return '$';
     return '€';
+  };
+
+  const [sessionUser, setSessionUser] = useState<any>(null);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        setSessionUser(session.user);
+      }
+    };
+    checkUser();
+  }, []);
+
+  const handleUpgrade = async (tierName: string) => {
+    if (!sessionUser) {
+      // Direct user to authenticate
+      router.push('/login');
+      return;
+    }
+
+    setCheckoutLoading(true);
+    setModalError(null);
+
+    try {
+      const res = await fetch('/api/payments/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: sessionUser.id,
+          tierName: tierName,
+          billingPeriod: billingPeriod,
+          region: region,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to initialize payment.');
+
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    } catch (err: any) {
+      alert(err.message || 'Payment integration setup failed.');
+    } finally {
+      setCheckoutLoading(false);
+    }
   };
 
   // Multi-step trial signup states
@@ -212,7 +261,7 @@ export default function PricingPage() {
       description: 'Ideal for neighborhood local storefronts & single-owner shops.',
       monthlyPrice: 799,
       annualPrice: 639,
-      trialText: '₹0 to start',
+      trialText: '7-day Trial',
       features: [
         '7-day free trial (no credit card)',
         'Up to 500 WhatsApp AI responses/month',
@@ -232,30 +281,15 @@ export default function PricingPage() {
       features: [
         'Unlimited WhatsApp AI responses',
         'Advanced lead qualification with AI scoring',
+        'Automated follow-ups (every 3 days, max 3 attempts)',
         'Full graphical dashboard & analytics',
-        'Multi-integrations (Calendar, Gmail, Sheets, Jira)',
+        'Multi-integrations (Calendar, Gmail, Sheets)',
         'Suggested AI responses on dashboard',
-        'Priority chat support',
         'Lead tracking & history',
+        'Priority chat support',
       ],
       icon: <Zap className="w-5 h-5 text-accent" />,
       highlight: true,
-    },
-    {
-      name: 'Enterprise',
-      description: 'For corporate scale centers and multi-location businesses.',
-      priceText: 'Custom',
-      features: [
-        'Everything in Growth +',
-        'Unlimited parallel WhatsApp channels',
-        'Custom fine-tuned AI agents',
-        'Multi-location support',
-        'Advanced Exotel channel integration',
-        'Dedicated account manager',
-        'Custom API access & SLAs',
-      ],
-      icon: <Landmark className="w-5 h-5 text-secondary" />,
-      highlight: false,
     },
   ];
 
@@ -332,7 +366,7 @@ export default function PricingPage() {
         </div>
 
         {/* Pricing Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 w-full">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 w-full max-w-4xl">
           {tiers.map((tier, idx) => {
             const price = getTierPrice(tier.name, billingPeriod);
             const currencySymbol = getCurrencySymbol();
@@ -399,20 +433,29 @@ export default function PricingPage() {
                   ))}
                 </ul>
 
-                {/* Action Button */}
-                <Button
-                  className="w-full justify-center text-sm font-semibold h-11"
-                  variant={tier.highlight ? 'primary' : 'secondary'}
-                  onClick={() => {
-                    if (isCustom) {
-                      window.location.href = 'mailto:sales@jawab.ai';
-                    } else {
-                      setShowSignupModal(true);
-                    }
-                  }}
-                >
-                  {isCustom ? 'Contact Sales' : 'Start 7-Day Free Trial'}
-                </Button>
+                 {/* Action Button */}
+                 <Button
+                   className="w-full justify-center text-sm font-semibold h-11"
+                   variant={tier.highlight ? 'primary' : 'secondary'}
+                   disabled={checkoutLoading}
+                   onClick={() => {
+                     if (isCustom) {
+                       window.location.href = 'mailto:sales@jawab.ai';
+                     } else if (tier.name === 'Starter') {
+                       setShowSignupModal(true);
+                     } else {
+                       handleUpgrade(tier.name);
+                     }
+                   }}
+                 >
+                   {isCustom 
+                     ? 'Contact Sales' 
+                     : tier.name === 'Starter' 
+                       ? 'Start 7-Day Free Trial' 
+                       : checkoutLoading 
+                         ? 'Redirecting to Payment...' 
+                         : `Subscribe to ${tier.name}`}
+                 </Button>
               </div>
             );
           })}

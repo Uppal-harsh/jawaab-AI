@@ -10,6 +10,23 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: 'userId parameter is required' }, { status: 400 });
     }
 
+    // 1. Check if user has an active subscription
+    const { data: sub } = await supabaseAdmin
+      .from('subscriptions')
+      .select('status')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (sub && sub.status === 'active') {
+      return NextResponse.json({ 
+        verified: true,
+        phoneNumber: '',
+        trialExpiresAt: null,
+        subscriptionActive: true
+      });
+    }
+
+    // 2. Check if phone trial record exists (meaning they verified phone in the past)
     const { data: record, error } = await supabaseAdmin
       .from('phone_trials')
       .select('phone_number, trial_expires_at')
@@ -21,10 +38,9 @@ export async function GET(req: Request) {
       return NextResponse.json({ verified: false });
     }
 
-    if (record && record.trial_expires_at) {
-      const expired = new Date(record.trial_expires_at) < new Date();
+    if (record) {
       return NextResponse.json({ 
-        verified: !expired,
+        verified: true,
         phoneNumber: record.phone_number,
         trialExpiresAt: record.trial_expires_at
       });

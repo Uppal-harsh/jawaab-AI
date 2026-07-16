@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { Button } from '../../../components/ui/Button';
-import { Save, Globe, Smartphone, Calendar, Loader2 } from 'lucide-react';
+import { Save, Globe, Smartphone, Calendar, Loader2, CreditCard } from 'lucide-react';
+import { supabase } from '../../../lib/supabase-client';
 
 export default function Settings() {
   const [openRouterKey, setOpenRouterKey] = useState('');
@@ -17,15 +18,66 @@ export default function Settings() {
   const [loading, setLoading] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
-  // Load from localStorage on mount
+  // Subscription details state
+  const [subscription, setSubscription] = useState<any>(null);
+  const [subLoading, setSubLoading] = useState(true);
+
+  const [timeLeftStr, setTimeLeftStr] = useState('');
+
+  // Load from localStorage & fetch subscription status on mount
   useEffect(() => {
-    setOpenRouterKey(localStorage.getItem('setting_openrouter_key') || 'sk-or-v1-jawab-reception');
+    setOpenRouterKey(localStorage.getItem('setting_openrouter_key') || '');
     setDefaultModel(localStorage.getItem('setting_default_model') || 'meta-llama/llama-3-8b-instruct');
-    setWhatsAppPhoneId(localStorage.getItem('setting_whatsapp_phone_id') || '1234567890');
-    setWhatsAppToken(localStorage.getItem('setting_whatsapp_token') || 'EAAD...');
-    setGoogleCalendarId(localStorage.getItem('setting_google_calendar_id') || 'primary');
-    setGoogleServiceAccountKey(localStorage.getItem('setting_google_service_account_key') || '{"type": "service_account", ...}');
+    setWhatsAppPhoneId(localStorage.getItem('setting_whatsapp_phone_id') || '');
+    setWhatsAppToken(localStorage.getItem('setting_whatsapp_token') || '');
+    setGoogleCalendarId(localStorage.getItem('setting_google_calendar_id') || '');
+    setGoogleServiceAccountKey(localStorage.getItem('setting_google_service_account_key') || '');
+
+    const fetchSub = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          const { data, error } = await supabase
+            .from('subscriptions')
+            .select('*')
+            .eq('user_id', session.user.id)
+            .maybeSingle();
+          if (data) setSubscription(data);
+        }
+      } catch (err) {
+        console.error('Failed to load subscription:', err);
+      } finally {
+        setSubLoading(false);
+      }
+    };
+    fetchSub();
   }, []);
+
+  useEffect(() => {
+    const checkTime = () => {
+      let expiry = null;
+      if (subscription?.current_period_end) {
+        expiry = subscription.current_period_end;
+      } else {
+        expiry = localStorage.getItem('trial_expiry');
+      }
+
+      if (expiry) {
+        const diff = new Date(expiry).getTime() - Date.now();
+        if (diff <= 0) {
+          setTimeLeftStr('Expired');
+        } else {
+          const hours = Math.floor(diff / (1000 * 60 * 60));
+          setTimeLeftStr(`${hours} hours remaining`);
+        }
+      } else {
+        setTimeLeftStr('');
+      }
+    };
+    checkTime();
+    const interval = setInterval(checkTime, 60000);
+    return () => clearInterval(interval);
+  }, [subscription]);
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
@@ -177,6 +229,65 @@ export default function Settings() {
                 className="w-full bg-background border border-border rounded-md px-3 py-2 text-xs focus:outline-none focus:border-accent text-white font-mono resize-none transition-colors" 
               />
             </div>
+          </div>
+        </div>
+
+        {/* Billing & Subscription Status */}
+        <div className="bg-surface border border-border rounded-xl p-6 shadow-sm space-y-6 md:col-span-2">
+          <div className="flex items-center gap-3 border-b border-border pb-4">
+            <div className="p-2 bg-background border border-border rounded-lg text-accent">
+              <CreditCard className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="font-medium text-primary">Billing & Subscription Status</h2>
+              <p className="text-xs text-secondary">Manage your payment details, active plans, and billing periods.</p>
+            </div>
+          </div>
+          
+          <div className="bg-background/50 p-4 rounded-xl border border-border/60 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              {subLoading ? (
+                <div className="flex items-center gap-2 text-xs text-secondary">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading subscription details...
+                </div>
+              ) : subscription ? (
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs uppercase font-bold tracking-wider text-accent bg-accent/15 px-2.5 py-0.5 rounded-full">
+                      {subscription.plan_name} Active
+                    </span>
+                    <span className="text-xs text-secondary">({subscription.status})</span>
+                  </div>
+                  <p className="text-xs text-secondary">
+                    Renewal Date: <span className="text-white font-medium">{new Date(subscription.current_period_end).toLocaleDateString()}</span>
+                  </p>
+                  {timeLeftStr && (
+                    <p className="text-xs text-accent">
+                      Time Remaining: <span className="font-bold">{timeLeftStr}</span>
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  <p className="text-xs text-secondary">You are currently running on the <strong>7-Day Free Trial</strong> (Starter Tier).</p>
+                  {timeLeftStr && (
+                    <p className="text-xs text-accent">
+                      Time Remaining: <span className="font-bold">{timeLeftStr}</span>
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {!subLoading && !subscription && (
+              <Button 
+                type="button" 
+                onClick={() => window.location.href = '/pricing'}
+                className="text-xs font-bold gap-2"
+              >
+                Upgrade to Paid Plan
+              </Button>
+            )}
           </div>
         </div>
       </div>

@@ -64,7 +64,7 @@ export default function OnboardingPage() {
     checkSession();
   }, [router]);
 
-  const handleSubmitOnboarding = async () => {
+  const handleSubmitOnboarding = async (chosenPlan: 'Starter' | 'Growth') => {
     if (!businessType || !missedCalls || !receptionMethod || !primaryGoal || !sessionUser) {
       setErrorMsg('Please answer all preferences questions.');
       return;
@@ -86,19 +86,22 @@ export default function OnboardingPage() {
 
       if (error) throw error;
 
+      // Update business type in local storage so dashboard customizes
+      localStorage.setItem('user_business_type', businessType);
+
       // Make sure authentication cookie is active
       document.cookie = `jawaab_admin_session=authenticated_token_active; path=/; max-age=604800; samesite=strict;`;
       
-      // Auto-create business default template record so profile saves don't error out
+      // Auto-create business default template record with zero demo data
       try {
         await fetch('/api/business', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Cookie': document.cookie },
           body: JSON.stringify({
-            name: `${businessType} Shop`,
-            owner_name: 'Owner',
-            phone_number: '+919999999999',
-            whatsapp_number: '+919999999999',
+            name: `${businessType}`,
+            owner_name: '',
+            phone_number: '',
+            whatsapp_number: '',
             operating_hours: {
               monday: { open: '09:00', close: '18:00', closed: false },
               tuesday: { open: '09:00', close: '18:00', closed: false },
@@ -108,10 +111,10 @@ export default function OnboardingPage() {
               saturday: { open: '10:00', close: '16:00', closed: false },
               sunday: { open: '00:00', close: '00:00', closed: true },
             },
-            fallback_number: '+919999999999',
-            voice_gender: 'female',
-            greeting_message: `Namaste. Welcome to our ${businessType} clinic. How can we help you?`,
-            telephony_provider: 'exotel',
+            fallback_number: '',
+            greeting_message: businessType.toLowerCase().includes('salon')
+              ? `Welcome to our Salon. How can we help you today?`
+              : `Welcome to our ${businessType}. How can we help you today?`,
             answering_mode: 'always_answer'
           })
         });
@@ -119,7 +122,56 @@ export default function OnboardingPage() {
         console.error('Failed to create fallback business template:', bizErr);
       }
 
-      router.push('/dashboard');
+      if (chosenPlan === 'Starter') {
+        const trialExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+        
+        // Upsert phone_trials trial_expires_at
+        const { data: ptRecord } = await supabase
+          .from('phone_trials')
+          .select('id')
+          .eq('user_id', sessionUser.id)
+          .maybeSingle();
+
+        if (ptRecord) {
+          await supabase
+            .from('phone_trials')
+            .update({ trial_expires_at: trialExpiresAt })
+            .eq('user_id', sessionUser.id);
+        } else {
+          await supabase
+            .from('phone_trials')
+            .insert({
+              user_id: sessionUser.id,
+              phone_number: '+919999999999',
+              trial_expires_at: trialExpiresAt,
+              trial_count: 1
+            });
+        }
+
+        localStorage.setItem('trial_active', 'true');
+        localStorage.setItem('trial_expiry', trialExpiresAt);
+        router.push('/dashboard');
+      } else {
+        // Growth Tier Stripe checkout redirect
+        const checkoutRes = await fetch('/api/payments/checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Cookie': document.cookie },
+          body: JSON.stringify({
+            userId: sessionUser.id,
+            tierName: 'Growth',
+            billingPeriod: 'monthly',
+            region: 'IN',
+          }),
+        });
+
+        const checkoutData = await checkoutRes.json();
+        if (!checkoutRes.ok) throw new Error(checkoutData.error || 'Failed to initialize payment.');
+
+        if (checkoutData.url) {
+          window.location.href = checkoutData.url;
+        }
+      }
+
     } catch (err: any) {
       setErrorMsg(err.message || 'Failed to save onboarding selections.');
     } finally {
@@ -131,6 +183,7 @@ export default function OnboardingPage() {
     if (step === 1 && !businessType) return;
     if (step === 2 && !missedCalls) return;
     if (step === 3 && !receptionMethod) return;
+    if (step === 4 && !primaryGoal) return;
     setStep(step + 1);
   };
 
@@ -156,12 +209,12 @@ export default function OnboardingPage() {
         {/* Step Indicator */}
         <div className="flex items-center justify-between px-2 text-[10px] font-semibold text-secondary uppercase tracking-wider">
           <span>Preferences Profile</span>
-          <span>Step {step} of 4</span>
+          <span>Step {step} of 5</span>
         </div>
         <div className="w-full h-1 bg-border rounded-full overflow-hidden">
           <div 
             className="h-full bg-accent transition-all duration-500" 
-            style={{ width: `${(step / 4) * 100}%` }}
+            style={{ width: `${(step / 5) * 100}%` }}
           />
         </div>
 
@@ -323,20 +376,70 @@ export default function OnboardingPage() {
                 <Button type="button" variant="ghost" onClick={prevStep}>Back</Button>
                 <Button 
                   type="button" 
-                  onClick={handleSubmitOnboarding} 
+                  onClick={nextStep} 
                   disabled={!primaryGoal || loading}
                   className="gap-2 font-bold bg-accent text-background hover:bg-accent/80 border border-accent/20"
                 >
-                  {loading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" /> Preparing Console
-                    </>
-                  ) : (
-                    <>
-                      Configure Dashboard <Sparkles className="w-4 h-4 text-background" />
-                    </>
-                  )}
+                  Continue <ArrowRight className="w-4 h-4" />
                 </Button>
+              </div>
+            </div>
+          )}
+
+          {/* STEP 5: Plan Selection */}
+          {step === 5 && (
+            <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-300">
+              <h2 className="text-sm font-semibold text-white uppercase tracking-wider">5. Which plan do you want to start with?</h2>
+              
+              <div className="space-y-4">
+                {/* Option 1: Starter Free Trial */}
+                <div className="border border-border bg-background p-4 rounded-xl space-y-3">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h3 className="font-semibold text-white text-sm">Starter Plan (7-Day Free Trial)</h3>
+                      <p className="text-xs text-secondary mt-0.5">₹799/month after trial</p>
+                    </div>
+                    <span className="text-[10px] font-bold text-green-400 bg-green-500/10 px-2 py-0.5 rounded-full">₹0 Today</span>
+                  </div>
+                  <p className="text-[11px] text-secondary">
+                    Includes up to 500 WhatsApp responses, basic lead capture, and Google Calendar sync.
+                  </p>
+                  <Button 
+                    type="button" 
+                    disabled={loading}
+                    onClick={() => handleSubmitOnboarding('Starter')}
+                    className="w-full justify-center text-xs h-9 font-semibold"
+                    variant="outline"
+                  >
+                    {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Start 7-Day Free Trial'}
+                  </Button>
+                </div>
+
+                {/* Option 2: Growth Subscription */}
+                <div className="border border-accent/30 bg-accent/5 p-4 rounded-xl space-y-3">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h3 className="font-semibold text-white text-sm">Growth Plan (Subscription)</h3>
+                      <p className="text-xs text-secondary mt-0.5">₹1,499/month</p>
+                    </div>
+                    <span className="text-[10px] font-bold text-accent bg-accent/15 px-2 py-0.5 rounded-full">Popular</span>
+                  </div>
+                  <p className="text-[11px] text-secondary">
+                    Includes unlimited WhatsApp responses, AI scoring, automated follow-ups, and full dashboard analytics.
+                  </p>
+                  <Button 
+                    type="button" 
+                    disabled={loading}
+                    onClick={() => handleSubmitOnboarding('Growth')}
+                    className="w-full justify-center text-xs h-9 font-bold bg-accent text-background hover:bg-accent/80 border border-accent/20"
+                  >
+                    {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Subscribe & Continue (Stripe)'}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="flex justify-between pt-2">
+                <Button type="button" variant="ghost" onClick={prevStep} disabled={loading}>Back</Button>
               </div>
             </div>
           )}

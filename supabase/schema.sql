@@ -135,3 +135,21 @@ ALTER TABLE public.phone_trials ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY anonymous_all_trials ON public.phone_trials 
     FOR ALL USING (true);
+
+-- 9. Stripe Subscriptions Table
+CREATE TABLE IF NOT EXISTS public.subscriptions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE UNIQUE,
+    stripe_customer_id TEXT,
+    stripe_subscription_id TEXT,
+    plan_name TEXT, -- 'Starter' or 'Growth'
+    status TEXT, -- 'active', 'trailing', 'canceled', etc.
+    currency TEXT, -- 'INR', 'USD', 'EUR'
+    current_period_end TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+ALTER TABLE public.subscriptions ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY admin_all_subscriptions ON public.subscriptions 
+    FOR ALL USING (auth.role() = 'authenticated');
