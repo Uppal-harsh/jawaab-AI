@@ -370,7 +370,7 @@ export default function PricingPage() {
           {tiers.map((tier, idx) => {
             const price = getTierPrice(tier.name, billingPeriod);
             const currencySymbol = getCurrencySymbol();
-            let priceFormatted = tier.priceText;
+            let priceFormatted = '';
             if (price !== null) {
               if (region === 'IN') {
                 priceFormatted = `${currencySymbol}${price.toLocaleString('en-IN')}`;
@@ -378,7 +378,7 @@ export default function PricingPage() {
                 priceFormatted = `${currencySymbol}${price.toFixed(2)}`;
               }
             }
-            const isCustom = price === null;
+            const isCustom = false;
 
             return (
               <div
