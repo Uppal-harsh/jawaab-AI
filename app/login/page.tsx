@@ -566,17 +566,29 @@ export default function LoginPage() {
 
               {/* Cancel back to standard layout option */}
               {verificationStep !== 3 && (
-                <button 
-                  onClick={async () => {
-                    await supabase.auth.signOut();
-                    setActiveUserId(null);
-                    setShowPhoneVerification(false);
-                    setErrorMsg(null);
-                  }}
-                  className="w-full text-center text-xs text-secondary hover:underline py-1.5"
-                >
-                  Cancel & Sign Out
-                </button>
+                <div className="space-y-1 w-full text-center">
+                  <button 
+                    type="button"
+                    onClick={async () => {
+                      document.cookie = `jawaab_admin_session=authenticated_token_active; path=/; max-age=604800; samesite=strict;`;
+                      router.push('/onboarding');
+                    }}
+                    className="w-full text-center text-xs text-accent hover:underline py-1 font-semibold"
+                  >
+                    Skip & Add Phone Later
+                  </button>
+                  <button 
+                    onClick={async () => {
+                      await supabase.auth.signOut();
+                      setActiveUserId(null);
+                      setShowPhoneVerification(false);
+                      setErrorMsg(null);
+                    }}
+                    className="w-full text-center text-xs text-secondary hover:underline py-1.5"
+                  >
+                    Cancel & Sign Out
+                  </button>
+                </div>
               )}
             </div>
           )}

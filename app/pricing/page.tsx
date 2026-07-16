@@ -545,6 +545,16 @@ export default function PricingPage() {
                 <Button type="submit" className="w-full justify-center h-10 gap-2 font-bold" disabled={isSubmitting}>
                   {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Send OTP Verification'}
                 </Button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    resetModalState();
+                    router.push('/onboarding');
+                  }}
+                  className="w-full text-center text-xs text-accent hover:underline py-1 mt-1 font-semibold"
+                >
+                  Skip & Add Phone Later
+                </button>
               </form>
             )}
 

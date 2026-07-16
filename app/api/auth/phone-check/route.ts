@@ -38,15 +38,12 @@ export async function GET(req: Request) {
       return NextResponse.json({ verified: false });
     }
 
-    if (record) {
-      return NextResponse.json({ 
-        verified: true,
-        phoneNumber: record.phone_number,
-        trialExpiresAt: record.trial_expires_at
-      });
-    }
-
-    return NextResponse.json({ verified: false });
+    // For now, phone verification is optional. Return verified: true.
+    return NextResponse.json({ 
+      verified: true,
+      phoneNumber: record?.phone_number || '',
+      trialExpiresAt: record?.trial_expires_at || null
+    });
   } catch (err: any) {
     console.error('[Phone Check Route Error]:', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
