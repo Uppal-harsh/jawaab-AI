@@ -1,9 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../lib/supabase';
-import { FlowOrchestrator } from '../../../../backend/flow';
-import { SupabaseStorageProvider } from '../../../../backend/providers/supabase-storage';
-import { OpenRouterLLMProvider } from '../../../../backend/providers/openrouter';
-import { WhatsAppNotificationProvider } from '../../../../backend/providers/whatsapp';
+import { OpenRouterService } from '../../../../services/openrouter';
 import { WhatsAppService } from '../../../../services/whatsapp';
 import { GoogleCalendarService } from '../../../../services/google-calendar';
 
@@ -57,116 +54,150 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Business not configured' }, { status: 404 });
     }
 
-    // Check profile completion percentage (must be >= 60%)
+    // 2. Retrieve or create active conversation
+    let { data: conversation } = await supabaseAdmin
+      .from('conversations')
+      .select('*')
+      .eq('business_id', business.id)
+      .eq('customer_whatsapp_number', customerPhone)
+      .eq('status', 'active')
+      .maybeSingle();
+
+    if (!conversation) {
+      const { data: newConv, error: cErr } = await supabaseAdmin
+        .from('conversations')
+        .insert({
+          business_id: business.id,
+          customer_whatsapp_number: customerPhone,
+          customer_name: customerName,
+          status: 'active'
+        })
+        .select('*')
+        .single();
+
+      if (cErr || !newConv) {
+        console.error('[WhatsApp Webhook] Failed to create conversation:', cErr);
+        return NextResponse.json({ error: 'DB error' }, { status: 500 });
+      }
+      conversation = newConv;
+    } else {
+      await supabaseAdmin
+        .from('conversations')
+        .update({ last_message_at: new Date().toISOString() })
+        .eq('id', conversation.id);
+    }
+
+    // 3. Log inbound user message
+    await supabaseAdmin
+      .from('messages')
+      .insert({
+        conversation_id: conversation.id,
+        direction: 'inbound',
+        sender: customerName,
+        content: messageText,
+        message_type: 'text'
+      });
+
+    // 4. Load recent history
+    const { data: dbMsgs } = await supabaseAdmin
+      .from('messages')
+      .select('direction, sender, content')
+      .eq('conversation_id', conversation.id)
+      .order('created_at', { ascending: true })
+      .limit(20);
+
+    const history = (dbMsgs || []).map(m => ({
+      role: m.direction === 'inbound' ? 'user' as const : 'assistant' as const,
+      content: m.content
+    }));
+
+    // 5. Fetch settings and build system prompt
     const { data: settings } = await supabaseAdmin
       .from('business_settings')
       .select('*')
       .eq('business_id', business.id)
       .maybeSingle();
 
-    const { data: promptConfig } = await supabaseAdmin
-      .from('prompt_configurations')
-      .select('*')
+    const { data: appointments } = await supabaseAdmin
+      .from('appointments')
+      .select('customer_name, scheduled_time, service')
       .eq('business_id', business.id)
-      .eq('is_active', true)
-      .maybeSingle();
+      .eq('status', 'confirmed');
 
-    const checkFields = [
-      business.name,
-      business.owner_name,
-      business.phone_number,
-      business.whatsapp_number,
-      settings?.greeting_message,
-      promptConfig?.system_prompt
+    const bookingList = (appointments || [])
+      .map(app => `- ${app.customer_name}: ${new Date(app.scheduled_time).toLocaleString('en-IN')} (${app.service || 'General'})`)
+      .join('\n');
+
+    const systemPrompt = `You are an AI receptionist for "${business.name}", owned by ${business.owner_name}.
+Your job is to answer customer questions politely on WhatsApp, qualify them as a lead, and help them book an appointment.
+
+Guidelines:
+1. Always greet the user warmly. Greeting template: "${settings?.greeting_message || 'Hello! How can we help you today?'}"
+2. Keep your answers brief, friendly, and helpful.
+3. If they want to book an appointment, qualify their interest (find out what service they want) and coordinate a time.
+4. Once you agree on a specific appointment time and service, format your output with special tag markers:
+   - Include "[INTENT: BookAppointment]" in your response when they finalize an appointment.
+   - Include "[DATE: YYYY-MM-DD HH:MM]" with the agreed scheduled slot (use the user's timezone ${business.timezone || 'Asia/Kolkata'}).
+5. If the customer requests human assistance or asks for things you cannot handle, include "[INTENT: RequestHuman]".
+
+Today's date and time is: ${new Date().toLocaleString('en-US', { timeZone: business.timezone || 'Asia/Kolkata' })}.
+
+Here are the existing booked slots (prevent double booking these times):
+${bookingList || 'None'}`;
+
+    // 6. Generate reply with Claude 3.5 Haiku via OpenRouter
+    const chatMsgs = [
+      { role: 'system', content: systemPrompt },
+      ...history
     ];
-    const filledCount = checkFields.filter(val => val && val.trim().length > 0).length;
-    const completion = Math.round((filledCount / checkFields.length) * 100);
 
-    if (completion < 60) {
-      console.warn(`[WhatsApp Webhook] Processing bypassed: business profile only ${completion}% complete (needs >= 60%)`);
-      return new Response('Profile incomplete', { status: 200 });
-    }
+    const llmResponse = await OpenRouterService.executeChat(chatMsgs, { temperature: 0.3, maxTokens: 200 });
+    const replyText = llmResponse.content;
 
-    // 2. Retrieve or create active chat session (reusing calls table)
-    let chat = await supabaseAdmin
-      .from('calls')
+    // 7. Save AI response generated
+    const { data: aiRes } = await supabaseAdmin
+      .from('ai_responses')
+      .insert({
+        conversation_id: conversation.id,
+        prompt_used: systemPrompt,
+        response_generated: replyText,
+        confidence_score: 0.95
+      })
       .select('*')
-      .eq('caller_number', customerPhone)
-      .order('start_time', { ascending: false })
-      .limit(1)
-      .maybeSingle()
-      .then(r => r.data);
+      .single();
 
-    let chatId = chat?.id;
-    let telephonyCallId = chat?.telephony_call_id;
+    // 8. Log outbound response message
+    await supabaseAdmin
+      .from('messages')
+      .insert({
+        conversation_id: conversation.id,
+        direction: 'outbound',
+        sender: 'AI Assistant',
+        content: replyText,
+        message_type: 'text',
+        ai_response_id: aiRes?.id || null
+      });
 
-    if (!chat) {
-      // Create new session
-      telephonyCallId = `wa_session_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-      const { data: newChat, error: cErr } = await supabaseAdmin
-        .from('calls')
-        .insert({
-          business_id: business.id,
-          telephony_call_id: telephonyCallId,
-          caller_number: customerPhone,
-          start_time: new Date().toISOString(),
-        })
-        .select('*')
-        .single();
-
-      if (cErr || !newChat) {
-        console.error('[WhatsApp Webhook] Failed to create chat session:', cErr);
-        return NextResponse.json({ error: 'DB error' }, { status: 500 });
-      }
-
-      chatId = newChat.id;
-
-      // Create CRM lead / chat summary record
-      const { error: sErr } = await supabaseAdmin
-        .from('call_summaries')
-        .insert({
-          call_id: chatId,
-          customer_name: customerName,
-          customer_phone: customerPhone,
-          reason_for_call: 'WhatsApp Inquiry',
-          lead_status: 'New',
-          full_transcript: []
-        });
-
-      if (sErr) {
-        console.error('[WhatsApp Webhook] Failed to create CRM lead summary:', sErr);
-      }
-    }
-
-    // 3. Process turn with FlowOrchestrator
-    const storage = new SupabaseStorageProvider();
-    const llm = new OpenRouterLLMProvider();
-    const notification = new WhatsAppNotificationProvider();
-    const orchestrator = new FlowOrchestrator(storage, llm, notification);
-
-    const replyText = await orchestrator.processCallTurn(telephonyCallId, messageText, business.id);
-
-    // 4. Update CRM status, process Calendar Sync and alert Owner if intents match
+    // 9. Process intents
     if (replyText.includes('[INTENT: BookAppointment]')) {
       let bookedDateText = '';
       const dateMatch = replyText.match(/\[DATE:\s*([^\]]+)\]/);
       if (dateMatch) {
         bookedDateText = dateMatch[1].trim();
       } else {
-        bookedDateText = new Date(Date.now() + 24 * 60 * 60 * 1000).toLocaleDateString() + ' 3:00 PM'; // Fallback to tomorrow 3pm
+        bookedDateText = new Date(Date.now() + 24 * 60 * 60 * 1000).toLocaleDateString() + ' 15:00';
       }
 
-      // Convert booked date text into ISO strings for Google Calendar
       let startISO = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
       let endISO = new Date(Date.now() + 25 * 60 * 60 * 1000).toISOString();
       try {
         const parsedDate = new Date(bookedDateText);
         if (!isNaN(parsedDate.getTime())) {
           startISO = parsedDate.toISOString();
-          endISO = new Date(parsedDate.getTime() + 60 * 60 * 1000).toISOString(); // 1 hour booking duration
+          endISO = new Date(parsedDate.getTime() + 60 * 60 * 1000).toISOString();
         }
       } catch (e) {
-        console.error('[Calendar Sync] Failed parsing bookedDateText, using fallback.', e);
+        console.error('[Calendar Sync] Failed parsing bookedDateText', e);
       }
 
       // Sync event directly to Google Calendar
@@ -177,22 +208,66 @@ export async function POST(req: Request) {
         endISO
       );
 
-      const calendarLog = calendarSync.success 
-        ? `Synced with Google Calendar. Event ID: ${calendarSync.eventId} (${calendarSync.simulated ? 'Simulated' : 'API'})`
-        : 'Failed to sync with Google Calendar API.';
+      // Create / upsert lead
+      let { data: lead } = await supabaseAdmin
+        .from('leads')
+        .select('*')
+        .eq('business_id', business.id)
+        .eq('customer_phone', customerPhone)
+        .maybeSingle();
 
-      // Transition CRM lead status in DB
-      await supabaseAdmin
-        .from('call_summaries')
-        .update({
-          lead_status: 'Appointment Booked',
-          appointment_date: bookedDateText,
-          reason_for_call: 'Booked appointment via WhatsApp',
-          notes: calendarLog
-        })
-        .eq('call_id', chatId);
+      if (!lead) {
+        const { data: newLead } = await supabaseAdmin
+          .from('leads')
+          .insert({
+            business_id: business.id,
+            conversation_id: conversation.id,
+            customer_name: customerName,
+            customer_phone: customerPhone,
+            lead_quality_score: 4,
+            status: 'qualified',
+            source: 'whatsapp'
+          })
+          .select('*')
+          .single();
+        lead = newLead;
+      } else {
+        await supabaseAdmin
+          .from('leads')
+          .update({ status: 'qualified' })
+          .eq('id', lead.id);
+      }
 
-      // Revert/Send structured summary notification to the business owner's WhatsApp number
+      if (lead) {
+        // Create appointment record
+        await supabaseAdmin
+          .from('appointments')
+          .insert({
+            lead_id: lead.id,
+            business_id: business.id,
+            customer_name: customerName,
+            customer_phone: customerPhone,
+            service: 'General Consultation',
+            scheduled_time: startISO,
+            status: 'confirmed',
+            synced_to_calendar: calendarSync.success,
+            google_calendar_event_id: calendarSync.eventId || null
+          });
+
+        // Schedule follow-ups: 3-day follow-up
+        const scheduledTime = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString();
+        await supabaseAdmin
+          .from('follow_ups')
+          .insert({
+            lead_id: lead.id,
+            follow_up_number: 1,
+            scheduled_for: scheduledTime,
+            message_content: `Hi ${customerName}, just checking in to see if you have any questions before your appointment!`,
+            message_sent: false
+          });
+      }
+
+      // Notify owner
       const alertPayload = {
         callerName: customerName,
         callerPhone: customerPhone,
@@ -202,16 +277,35 @@ export async function POST(req: Request) {
         callbackRequested: false,
         durationSeconds: 0
       };
-      
       await WhatsAppService.sendCallSummaryNotification(business.whatsapp_number, alertPayload);
 
     } else if (replyText.includes('[INTENT: RequestHuman]')) {
-      await supabaseAdmin
-        .from('call_summaries')
-        .update({ lead_status: 'Contacted', callback_requested: true })
-        .eq('call_id', chatId);
+      // Create lead if not exists
+      let { data: lead } = await supabaseAdmin
+        .from('leads')
+        .select('*')
+        .eq('business_id', business.id)
+        .eq('customer_phone', customerPhone)
+        .maybeSingle();
 
-      // Dispatch urgent callback alert to owner's WhatsApp
+      if (!lead) {
+        const { data: newLead } = await supabaseAdmin
+          .from('leads')
+          .insert({
+            business_id: business.id,
+            conversation_id: conversation.id,
+            customer_name: customerName,
+            customer_phone: customerPhone,
+            lead_quality_score: 3,
+            status: 'new',
+            source: 'whatsapp'
+          })
+          .select('*')
+          .single();
+        lead = newLead;
+      }
+
+      // Notify owner
       const alertPayload = {
         callerName: customerName,
         callerPhone: customerPhone,
@@ -221,19 +315,16 @@ export async function POST(req: Request) {
         callbackRequested: true,
         durationSeconds: 0
       };
-      
       await WhatsAppService.sendCallSummaryNotification(business.whatsapp_number, alertPayload);
     }
 
-    // Strip out LLM intents formatting before sending response to Meta WhatsApp Client
+    // Strip out tags before replying
     const cleanedReply = replyText
       .replace(/\[INTENT:\s*[A-Za-z]+\]/g, '')
       .replace(/\[DATE:\s*[^\]]+\]/g, '')
       .trim();
 
-    // 5. Send message response back to customer's WhatsApp
     const isSent = await WhatsAppService.sendTextMessage(customerPhone, cleanedReply);
-
     return NextResponse.json({ ok: isSent, reply: cleanedReply });
   } catch (error) {
     console.error('[WhatsApp Webhook POST Error]:', error);

@@ -6,7 +6,7 @@ export class OpenRouterService {
   private static apiUrl = 'https://openrouter.ai/api/v1/chat/completions';
   
   // High quality, low-latency instruction model suitable for conversational voice tasks
-  private static defaultModel = 'meta-llama/llama-3-8b-instruct';
+  private static defaultModel = 'anthropic/claude-3.5-haiku';
 
   /**
    * Execute chat completions with OpenRouter
