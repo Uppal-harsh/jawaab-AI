@@ -1,6 +1,6 @@
 # Jawaab AI — 24/7 WhatsApp Chat Automation & CRM
 
-Jawaab AI is an intelligent WhatsApp-based chat automation assistant and CRM system built for Indian SMBs (salons, clinics, coaching institutes). It automatically replies to customer inquiries, captures lead logs, schedules non-overlapping appointments, syncs bookings directly with Google Calendar, and alerts business owners on WhatsApp.
+Jawaab AI automates WhatsApp inquiries for Indian salons, clinics, and service businesses. Qualify leads with AI, book appointments automatically, and never miss a customer again. All for just ₹799/month.
 
 ---
 
@@ -58,13 +58,36 @@ jawaab-ai/
 
 ## 🚀 Key Features
 
-*   **24/7 WhatsApp Chat Automation**: Natural conversation answering custom FAQ inquiries and capturing leads instantly.
+*   **24/7 WhatsApp Chat Automation**: Natural conversation qualifying leads (Inbound lead → AI qualification → appointment booking) and responding instantly.
 *   **Conflict-Free Booking Scheduler**: Dynamically validates prospective slots against existing schedules in the database to prevent overlapping appointments.
 *   **Google Calendar Integration**: Schedules booking dates dynamically directly into Google Calendar via OAuth2 JWT server-to-server credentials.
-*   **WhatsApp CRM Alerts**: Instantly notifies the business owner's WhatsApp when a booking succeeds or a human fallback is requested.
-*   **Circular Progress Gauge**: Displays profile completion rates (General details, Greeting, Bot Script) with locks to ensure bots are configured before starting.
-*   **AI script Builder**: Drafts optimized conversational instructions using OpenRouter based on profile characteristics.
-*   **SMS/OTP Trial Verification**: Protects trial signups using Twilio-backed phone verification and automatic 24-hour lockout rules.
+*   **Differentiated Dashboards**: 
+    *   **Starter**: Clean, minimal 3 metrics, recent leads stream, read-only calendar sync, and quick settings.
+    *   **Growth**: Advanced conversion metrics, interactive lead status funnel charts, AI rating scores (1-5), templates suggestion panel, Gmail/Calendar/Sheets integrations, and data exports.
+*   **Onboarding plan setup**: Smooth wizard directing users from login/questionnaire to selecting Starter (7-Day Trial) or Growth (redirects to Stripe payment checkout).
+*   **SMS/OTP Trial Verification**: Protects trial signups using Twilio-backed phone verification (optional skip option enabled).
+
+---
+
+## 💳 Subscription Tiers (v1 Capabilities Only)
+
+### Starter (₹799/month)
+- 7-day free trial (no credit card required)
+- Up to 500 WhatsApp AI responses/month
+- Basic lead capture from WhatsApp
+- Single integration (Google Calendar)
+- Email support (24-48hr response)
+- Phone verification optional
+
+### Growth (₹1,499/month)
+- Unlimited WhatsApp AI responses
+- Advanced lead qualification with AI scoring (1-5 rating)
+- Automated follow-ups (every 3 days, max 3 attempts)
+- Full graphical dashboard & analytics (Funnel chart)
+- Multi-integrations (Calendar, Gmail, Sheets)
+- Suggested AI responses on dashboard
+- Lead tracking & history
+- Priority chat support
 
 ---
 
@@ -74,7 +97,7 @@ jawaab-ai/
 *   **Database & Authentication**: [Supabase](https://supabase.com/) (PostgreSQL, Row Level Security, Client Auth APIs)
 *   **Animations**: [Anime.js](https://animejs.com/) for page loads and progress updates
 *   **AI Routing**: [OpenRouter](https://openrouter.ai/) (supporting low-latency models like `meta-llama/llama-3-8b-instruct` or `google/gemini-flash-1.5`)
-*   **Communications (SMS & CRM)**: [Twilio SMS](https://www.twilio.com/) (for OTP validation) and Meta WhatsApp Cloud API
+*   **Communications & Payments**: Meta WhatsApp Cloud API and [Stripe Payments](https://stripe.com/)
 
 ---
 
