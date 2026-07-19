@@ -6,6 +6,7 @@ import { supabase } from '../../lib/supabase-client';
 import { Button } from '../../components/ui/Button';
 import { BrandLogo } from '../../components/ui/BrandLogo';
 import { Mail, Lock, Chrome, Loader2, Smartphone, KeyRound, CheckCircle, ArrowRight, ShieldAlert } from 'lucide-react';
+import { PhoneInput } from '../../components/ui/PhoneInput';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -477,17 +478,11 @@ export default function LoginPage() {
                 <form onSubmit={handleRequestOtp} className="space-y-4 animate-in fade-in duration-300">
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-bold text-secondary uppercase tracking-wider block">WhatsApp Phone Number</label>
-                    <div className="relative">
-                      <Smartphone className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-secondary" />
-                      <input 
-                        type="tel"
-                        required
-                        placeholder="+919876543210"
-                        value={phoneInput}
-                        onChange={(e) => setPhoneInput(e.target.value)}
-                        className="w-full bg-surface border border-border rounded-lg pl-10 pr-3 py-2.5 text-sm focus:outline-none focus:border-accent text-white font-mono"
-                      />
-                    </div>
+                    <PhoneInput 
+                      value={phoneInput} 
+                      onChange={setPhoneInput} 
+                      required 
+                    />
                   </div>
                   <p className="text-[10px] text-secondary">A 6-digit trial registration code will be sent to your phone via SMS/WhatsApp.</p>
                   <Button type="submit" className="w-full justify-center h-11 gap-2 font-bold" disabled={otpLoading}>

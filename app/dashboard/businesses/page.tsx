@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '../../../components/ui/Button';
 import { Save, Plus, Trash2, Loader2, MessageSquare, Shield, Sparkles, AlertCircle, Edit, CheckCircle } from 'lucide-react';
+import { PhoneInput } from '../../../components/ui/PhoneInput';
 
 interface KnowledgeCard {
   id?: string;
@@ -350,13 +351,10 @@ export default function BusinessProfile() {
               
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-secondary uppercase tracking-wider block">Business Phone Number *</label>
-                <input 
-                  type="tel" 
-                  placeholder="e.g. +91 98765 43210"
+                <PhoneInput 
                   value={phone} 
-                  onChange={(e) => setPhone(e.target.value)}
-                  className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:border-accent text-white transition-colors" 
-                  required
+                  onChange={setPhone} 
+                  required 
                 />
               </div>
 
@@ -590,12 +588,9 @@ export default function BusinessProfile() {
             <div className="space-y-4">
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-secondary uppercase tracking-wider block">Owner Delivery Number *</label>
-                <input 
-                  type="tel" 
-                  placeholder="e.g. +91 98765 43210"
+                <PhoneInput 
                   value={whatsappNumber}
-                  onChange={(e) => setWhatsappNumber(e.target.value)}
-                  className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:border-accent text-white transition-colors" 
+                  onChange={setWhatsappNumber}
                   required
                 />
                 <p className="text-[10px] text-secondary mt-1">Number that will receive real-time follow-up / callback alerts from the automation flow.</p>

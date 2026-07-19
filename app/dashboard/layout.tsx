@@ -9,7 +9,8 @@ import {
   Store, 
   MessageSquare, 
   Settings, 
-  LogOut
+  LogOut,
+  HelpCircle
 } from 'lucide-react';
 import { cn } from '../../components/ui/Button';
 import { BrandLogo } from '../../components/ui/BrandLogo';
@@ -18,6 +19,7 @@ const navItems = [
   { label: 'Overview', href: '/dashboard', icon: <LayoutDashboard className="w-4 h-4" /> },
   { label: 'Business Profile', href: '/dashboard/businesses', icon: <Store className="w-4 h-4" /> },
   { label: 'CRM Leads', href: '/dashboard/calls', icon: <MessageSquare className="w-4 h-4" /> },
+  { label: 'How to Start', href: '/dashboard/start', icon: <HelpCircle className="w-4 h-4" /> },
   { label: 'Settings', href: '/dashboard/settings', icon: <Settings className="w-4 h-4" /> },
 ];
 

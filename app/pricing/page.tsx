@@ -6,6 +6,7 @@ import { BrandLogo } from '../../components/ui/BrandLogo';
 import { Button } from '../../components/ui/Button';
 import { Check, ShieldAlert, Zap, Landmark, Globe, Smartphone, Mail, KeyRound, CheckCircle, ArrowRight, X, Loader2 } from 'lucide-react';
 import { Navbar } from '../../components/ui/Navbar';
+import { PhoneInput } from '../../components/ui/PhoneInput';
 import { supabase } from '../../lib/supabase-client';
 
 export default function PricingPage() {
@@ -526,17 +527,11 @@ export default function PricingPage() {
               <form onSubmit={handleStep2Phone} className="space-y-4">
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold text-secondary uppercase tracking-wider block">WhatsApp Phone Number</label>
-                  <div className="relative">
-                    <Smartphone className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-secondary" />
-                    <input 
-                      type="tel"
-                      required
-                      placeholder="+919876543210"
-                      value={phoneInput}
-                      onChange={(e) => setPhoneInput(e.target.value)}
-                      className="w-full bg-background border border-border rounded-lg pl-10 pr-3 py-2.5 text-sm focus:outline-none focus:border-accent text-white font-mono"
-                    />
-                  </div>
+                  <PhoneInput 
+                    value={phoneInput} 
+                    onChange={setPhoneInput} 
+                    required 
+                  />
                 </div>
                 <div className="text-[10px] text-secondary space-y-1 bg-background/50 p-2.5 rounded-lg border border-border/40">
                   <p>• Max limit of 2-3 free trials allowed per phone number.</p>

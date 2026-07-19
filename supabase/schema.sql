@@ -155,8 +155,22 @@ CREATE INDEX idx_leads_created_at ON public.leads(created_at);
 
 -- Enable RLS (Row Level Security)
 ALTER TABLE public.businesses ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.business_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.conversations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.leads ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.appointments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.subscriptions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.onboarding_preferences ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.phone_trials ENABLE ROW LEVEL SECURITY;
+
+-- Create Policies for Authenticated Users
+CREATE POLICY admin_all_businesses ON public.businesses FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY admin_all_settings ON public.business_settings FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY admin_all_conversations ON public.conversations FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY admin_all_leads ON public.leads FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY admin_all_appointments ON public.appointments FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY admin_all_subscriptions ON public.subscriptions FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY admin_all_onboarding ON public.onboarding_preferences FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
+-- Create Policy for Phone Trials (anonymous access permitted for SMS validation)
+CREATE POLICY anonymous_all_trials ON public.phone_trials FOR ALL USING (true) WITH CHECK (true);
